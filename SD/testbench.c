@@ -6,7 +6,9 @@
 #include <pthreadUtils.h>
 #include <Pipes.h>
 #include <pipeHandler.h>
+#include <stdbool.h>
 
+typedef bool uint1_t;
 //registers
 
 #define blocksize 0x04
@@ -37,8 +39,14 @@ void request_pipe_write()
           Bits 71-68: Byte-mask
 	  Bits 67-32: Physical address
           Bits 31- 0: Write-data*/
-	uint8_t request_pipe_write_req;
-	uint8_t request_pipe_write_ack;
+	uint1_t lock bit;
+	uint1_t RW;
+	uint8_t byte_mask;
+	uint8_t address1;
+	uint32_t address0;
+	uint32_t wdata;
+	uint1_t request_pipe_write_req;
+	uint1_t request_pipe_write_ack;
 	
 
 }
@@ -50,6 +58,8 @@ void response_pipe_read()
 	//int response_pipe_read_data[read_data_length];
 	/*Bits 32: Error-bit
 	  Bits 31-0: Read-Data*/
+	uint1_t error_bit;
+	uint32_t rdata;
 	uint8_t response_pipe_read_req;
 	uint8_t response_pipe_read_ack;
 
