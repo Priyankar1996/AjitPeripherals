@@ -21,9 +21,10 @@
 #define bufferdata 0x20
 #define present 0x24
 #define capa 0x40
+
+
+#define SD_Base 0x00//SD base address
   
-
-
 
 #define write_data_length 74
 #define read_data_length 33
@@ -35,7 +36,7 @@ void request_pipe_write()
           Bit 72: read/write-bar
           Bits 71-68: Byte-mask
 	  Bits 67-32: Physical address
-          Bits 31- 00: Write-data*/
+          Bits 31- 0: Write-data*/
 	uint8_t request_pipe_write_req;
 	uint8_t request_pipe_write_ack;
 	
@@ -48,7 +49,7 @@ void response_pipe_read()
 	
 	//int response_pipe_read_data[read_data_length];
 	/*Bits 32: Error-bit
-	  Bits 31-00: Read-Data*/
+	  Bits 31-0: Read-Data*/
 	uint8_t response_pipe_read_req;
 	uint8_t response_pipe_read_ack;
 
@@ -59,6 +60,12 @@ DEFINE_THREAD(response_pipe_read);
 
 int main()
 {
+
+	//Test initialization-T1
+	//Test single block write-T2
+	//Test single block read-T3
+	//Test multiple block write-T4
+	//Test multiple block read-T5
 	return 0;
 }
 
