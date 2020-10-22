@@ -13,14 +13,14 @@
 
 void request_pipe_write()
 {
-	int  request_pipe_write_data[write_data_length];
+	//int  request_pipe_write_data[write_data_length];
 	/*Bit 73: lock bit
           Bit 72: read/write-bar
           Bits 71-68: Byte-mask
 	  Bits 67-32: Physical address
           Bits 31- 00: Write-data*/
-	int request_pipe_write_req;
-	int request_pipe_write_ack;
+	uint8_t request_pipe_write_req;
+	uint8_t request_pipe_write_ack;
 	
 
 }
@@ -29,17 +29,16 @@ DEFINE_THREAD(request_pipe_write);
 void response_pipe_read()
 {
 	
-	int response_pipe_read_data[read_data_length];
+	//int response_pipe_read_data[read_data_length];
 	/*Bits 32: Error-bit
 	  Bits 31-00: Read-Data*/
-	int response_pipe_read_req;
-	int response_pipe_read_ack;
+	uint8_t response_pipe_read_req;
+	uint8_t response_pipe_read_ack;
 
 
 
 }
 DEFINE_THREAD(response_pipe_read);
-
 
 int main()
 {
