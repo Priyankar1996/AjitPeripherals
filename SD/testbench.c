@@ -7,6 +7,23 @@
 #include <Pipes.h>
 #include <pipeHandler.h>
 
+//registers
+
+#define blocksize 0x04
+#define blockcount 0x06
+#define argument 0x08
+#define transfer 0x0c
+#define command 0x0e
+#define resp0 0x10
+#define resp2 0x14
+#define resp4 0x18
+#define resp6 0x1e
+#define bufferdata 0x20
+#define present 0x24
+#define capa 0x40
+  
+
+
 
 #define write_data_length 74
 #define read_data_length 33
