@@ -28,8 +28,8 @@ typedef bool uint1_t;
 #define SD_Base 0x00//SD base address
   
 
-#define write_data_length 74
-#define read_data_length 33
+//#define write_data_length 74
+//#define read_data_length 33
 
 void request_pipe_write()
 {
@@ -72,6 +72,8 @@ int main()
 {
 
 	//Test initialization-T1
+	//	// CMD0 Argument 0x0000
+	//	// CMD0 Command  0x001A
 	//Test single block write-T2
 	//Test single block read-T3
 	//Test multiple block write-T4
