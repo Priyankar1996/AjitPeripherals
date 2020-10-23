@@ -89,8 +89,18 @@ int main()
 {
 
 	//Test initialization-T1
-	//	// CMD0 Argument 0x0000
-	//	// CMD0 Command  0x001A
+		// CMD0 Arguement 0x0000
+		// CMD0 Command  0x001A
+		// CMD8 Arguement 
+		// CMD8 Command
+		// CMD55 Arguement
+		// CMD55 Command
+		// ACMD41 Arguement
+		// ACMD41 Command
+		// CMD2 Arguement
+		// CMD2 Command
+		// CMD3 Arguement
+		// CMD3 Command	
 	//Test single block write-T2
 	//Test single block read-T3
 	//Test multiple block write-T4
