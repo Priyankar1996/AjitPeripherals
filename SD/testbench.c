@@ -48,7 +48,7 @@ typedef bool uint1_t;
 //#define write_data_length 74
 //#define read_data_length 33
 
-void request_pipe_write()
+void request_pipe_write0()
 {
 	//int  request_pipe_write_data[write_data_length];
 	/*Bit 73: lock bit
@@ -56,18 +56,16 @@ void request_pipe_write()
           Bits 71-68: Byte-mask
 	  Bits 67-32: Physical address
           Bits 31- 0: Write-data*/
-	uint1_t lock bit;
-	uint1_t RW;
-	uint8_t byte_mask;
-	uint8_t address1;
-	uint32_t address0;
-	uint32_t wdata;
-	uint1_t request_pipe_write_req;
-	uint1_t request_pipe_write_ack;
-	
-
+	uint64_t write_data0;
 }
-DEFINE_THREAD(request_pipe_write);
+
+void request_pipe_write1()
+{
+	uint16_t write_data1;
+}
+
+DEFINE_THREAD(request_pipe_write0);
+DEFINE_THREAD(request_pipe_write1);
 
 void response_pipe_read()
 {
@@ -75,13 +73,7 @@ void response_pipe_read()
 	//int response_pipe_read_data[read_data_length];
 	/*Bits 32: Error-bit
 	  Bits 31-0: Read-Data*/
-	uint1_t error_bit;
-	uint32_t rdata;
-	uint8_t response_pipe_read_req;
-	uint8_t response_pipe_read_ack;
-
-
-
+	uint64_t read_data;
 }
 DEFINE_THREAD(response_pipe_read);
 
