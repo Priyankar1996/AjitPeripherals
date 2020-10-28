@@ -125,7 +125,7 @@ void SD_Card_write_pipe(uint64_t Starting_address)
 	while(1)
 	{
 		// Here write data is to be modified to 
-		// the location we want it to be read.
+		// the location we want it to be written.
 		uint64_t write_data; // Through the 4 DAT Lines
 		if(SD_abort == 1 )
 		{
