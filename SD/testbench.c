@@ -47,6 +47,11 @@
 
 //#define write_data_length 74
 //#define read_data_length 33
+int lockbit=0;
+int r/w = 0;
+int bytemask;
+int PhyAdd;
+int write-data;
 
 void SendRequestToSDHC()
 {
@@ -76,7 +81,46 @@ void GetResponseFromSDHC()
 DEFINE_THREAD(GetResponseFromSDHC);
 
 
+void Initialization()
+{
 
+}
+
+void Blockwrite()
+{
+
+}
+
+void BlockRead()
+{
+	SendCMD(0);
+	SendCMD(8);
+	SendCMD(55);
+	SendACMD(41);
+	SendCMD(2);
+	SendCMD(3);
+
+}
+
+void SendCMD(int n)
+{
+	switch(n)
+	{
+		case 0: PhyAdd = argument;
+			write-data = 0;
+			SendRequestToSDHC();
+			PhyAdd = command;
+			write-data = 0x001A;
+			SendRequestToSDHC();
+			GetResponseFromSDHC();
+			break;
+		case 2:
+	}
+
+
+
+
+}
 
 
 
@@ -100,6 +144,15 @@ int main()
 	//Test single block read-T3
 	//Test multiple block write-T4
 	//Test multiple block read-T5
+	
+	while(1)
+	{
+		Initialization();
+		Blockwrite();
+		BlockRead();
+
+	}
+
 	return 0;
 }
 
