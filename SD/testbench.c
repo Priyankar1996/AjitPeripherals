@@ -47,11 +47,11 @@
 
 //#define write_data_length 74
 //#define read_data_length 33
-int lockbit=0;
-int r/w = 0;
-int bytemask;
-int PhyAdd;
-int write-data;
+long int lockbit=0;
+long int r/w = 0;
+long int bytemask;
+long int PhyAdd;
+int data;
 
 void SendRequestToSDHC()
 {
@@ -63,6 +63,10 @@ void SendRequestToSDHC()
           Bits 31- 0: Write-data*/
 	uint64_t write_data0;
 	uint16_t write_data1;
+	
+	write_data0 = (lockbit<<63)|(r/w<<62)|(bytemask<<58)|(PhyAdd<<22)|(data>>10);
+	write_data1 = (data<<6);
+
 	write_uint64 ("in_data_0",write_data0);
 	write_uint16("in_data_1",write_data_1);
 }
@@ -107,10 +111,10 @@ void SendCMD(int n)
 	switch(n)
 	{
 		case 0: PhyAdd = argument;
-			write-data = 0;
+			data = 0;
 			SendRequestToSDHC();
 			PhyAdd = command;
-			write-data = 0x001A;
+			data = 0x001A;
 			SendRequestToSDHC();
 			GetResponseFromSDHC();
 			break;
