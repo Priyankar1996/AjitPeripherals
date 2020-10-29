@@ -8,7 +8,7 @@
 #include <pipeHandler.h>
 #include <stdbool.h>
 
-typedef bool uint1_t;
+//typedef bool uint1_t;
 //registers
 
 #define blocksize 0x04
@@ -48,7 +48,7 @@ typedef bool uint1_t;
 //#define write_data_length 74
 //#define read_data_length 33
 
-void request_pipe_write0()
+void SendRequestToSDHC()
 {
 	//int  request_pipe_write_data[write_data_length];
 	/*Bit 73: lock bit
@@ -57,17 +57,15 @@ void request_pipe_write0()
 	  Bits 67-32: Physical address
           Bits 31- 0: Write-data*/
 	uint64_t write_data0;
-}
-
-void request_pipe_write1()
-{
 	uint16_t write_data1;
+	write_uint64 ("in_data_0",write_data0);
+	write_uint16("in_data_1",write_data_1);
 }
 
-DEFINE_THREAD(request_pipe_write0);
-DEFINE_THREAD(request_pipe_write1);
 
-void response_pipe_read()
+DEFINE_THREAD(SendRequestToSDHC);
+
+void GetResponseFromSDHC()
 {
 	
 	//int response_pipe_read_data[read_data_length];
@@ -75,7 +73,12 @@ void response_pipe_read()
 	  Bits 31-0: Read-Data*/
 	uint64_t read_data;
 }
-DEFINE_THREAD(response_pipe_read);
+DEFINE_THREAD(GetResponseFromSDHC);
+
+
+
+
+
 
 int main()
 {
