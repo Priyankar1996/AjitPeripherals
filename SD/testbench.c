@@ -44,9 +44,6 @@
 
 #define SD_Base 0x00//SD base address
   
-
-//#define write_data_length 74
-//#define read_data_length 33
 long int lockbit=0;
 long int r/w = 0;
 long int bytemask;
@@ -55,7 +52,6 @@ int data;
 
 void SendRequestToSDHC()
 {
-	//int  request_pipe_write_data[write_data_length];
 	/*Bit 73: lock bit
           Bit 72: read/write-bar
           Bits 71-68: Byte-mask
@@ -68,7 +64,7 @@ void SendRequestToSDHC()
 	write_data1 = (data<<6);
 
 	write_uint64 ("in_data_0",write_data0);
-	write_uint16("in_data_1",write_data_1);
+	write_uint16 ("in_data_1",write_data1);
 }
 
 
@@ -93,38 +89,60 @@ void Initialization()
  	SendCMD(0);
         SendCMD(8);
         SendCMD(55);
-        SendACMD(41);
+        SendACMD(41);//with S18R(bit 24)=0
         SendCMD(2);
         SendCMD(3);
 
 }
 
-void Blockwrite()
+void UHSInitialisation()
 {
+	SendCMD(0);
+	SendCMD(8);
+	SendCMD(55);
+	SendACMD(41);//HCS(bit 30) and S18R(bit 24)=1
+	SendCMD(11);
+	SendCMD(2);
+	SendCMD(3);
+	SendCMD(7);
+	SendCMD(42);
+	SendCMD(55);
+	SendACMD(6);
+	SendCMD(19);
+}
+void Blockwrite()
 //CMD7
 //ACMD6
 //CMD6
 //CMD19
 //CMD24
 //CMD15
+{
+	SendCMD(7);
+	SendCMD(55);
+	SendACMD(6);
+	SendCMD(6);
+	SendCMD(19);
+	SendCMD(24);
+	SendCMD(15);
 }
 
 void BlockRead()
 {
-//CMD7
-//ACMD6
-//CMD6
-//CMD19
-//CMD17
-//CMD15
-
+	SendCMD(7);
+        SendCMD(55);
+        SendACMD(6);
+        SendCMD(6);
+	SendCMD(19);
+        SendCMD(17);
+        SendCMD(15);	
 }
 
 void SendCMD(int n)
 {
 	switch(n)
 	{
-		case 0: PhyAdd = argument;
+		case 0: PhyAdd =argument;
 			data = 0;
 			SendRequestToSDHC();
 			PhyAdd = command;
@@ -132,20 +150,143 @@ void SendCMD(int n)
 			SendRequestToSDHC();
 			GetResponseFromSDHC();
 			break;
-		case 8:
+
+		case 2: PhyAdd =argument;
+                        data = 0;
+                        SendRequestToSDHC();
+                        PhyAdd = command;
+                        data = GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+			break;
+
+		case 3: PhyAdd =argument;
+                        data = 0;
+                        SendRequestToSDHC();
+                        PhyAdd = command;
+                        data = GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+			break;
+
+		case 6:	PhyAdd=argument;
+                        data =;
+                        SendRequestToSDHC();
+                        PhyAdd=command;
+                        data=GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+                        break;
+
+		case 7: PhyAdd=argument;
+                        data=0;
+                        SendRequestToSDHC();
+                        PhyAdd=command;
+                        data=GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+                        break;
+		
+		case 11:PhyAdd=argument;
+			data=0;
+			SendRequestToSDHC();
+			PhyAdd=command;
+			data=GenerateCMD(n);
+			SendRequestToSDHC();
+			GetResponseFromSDHC();
+			break;
+
+		case 19:PhyAdd=argument;
+			data=0;
+			SendRequestToSDHC();
+			PhyAdd=command;
+			data=GenerateCMD(n);
+			SendRequestToSDHC();
+			GetResponseFromSDHC();
+			break;
+
+		case 15:PhyAdd=argument;
+                        data=0;
+                        SendRequestToSDHC();
+                        PhyAdd=command;
+                        data=GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+                        break;
+
+		case 17:PhyAdd=argument;
+                        data=;
+                        SendRequestToSDHC();
+                        PhyAdd=command;
+                        data=GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+                        break;
+
+		case 24:PhyAdd=argument;
+                        data =;
+                        SendRequestToSDHC();
+                        PhyAdd=command;
+                        data=GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+                        break;
+
+		case 8: PhyAdd = argument;
+                        data = 0x1AA;
+                        SendRequestToSDHC();
+                        PhyAdd = command;
+                        data = GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+			break;
+
+		case 55:PhyAdd = argument;
+                        data = 0;
+                        SendRequestToSDHC();
+                        PhyAdd = command;
+                        data = GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+			break;
 	}
 
-
-
-
+void sendACMD(int n)
+{
+	switch(n)
+	{
+		case 6: PhyAdd=argument;
+			data =0x2;
+			SendRequestToSDHC();
+			PhyAdd=command;
+			data=GenerateCMD(n);
+			SendRequestToSDHC();
+			GetResponseFromSDHC();
+			break;
+		case 41:PhyAdd = argument;
+                        data = 0;
+                        SendRequestToSDHC();
+                        PhyAdd = command;
+                        data = GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
+			break;
+	}
 }
+
 
 int GenerateCMD(int n)
 {
 	int cmd;
 	if( n== (0||2||9||10))//R2
 	{
-		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;//(13:08)Index (7:6)cmd Type 5 Data present 4 Command check enable 3 crc check enable 1:0 Response type
+		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
+		/*(13:08)Index 
+		  (7:6)cmd Type 
+		  5 Data present 
+		  4 Command check enable 
+		  3 crc check enable 
+		  (1:0) Response type*/
 
 	}
 	else if (n == 41) //R3
@@ -163,7 +304,6 @@ int GenerateCMD(int n)
 	return cmd;
 
 }
-
 
 
 int main()
@@ -197,4 +337,3 @@ int main()
 
 	return 0;
 }
-
