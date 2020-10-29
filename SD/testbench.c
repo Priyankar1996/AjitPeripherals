@@ -81,12 +81,21 @@ void GetResponseFromSDHC()
 	/*Bits 32: Error-bit
 	  Bits 31-0: Read-Data*/
 	uint64_t read_data;
+	read_uint64("out_data",read_data);
+
+
 }
 DEFINE_THREAD(GetResponseFromSDHC);
 
 
 void Initialization()
 {
+ 	SendCMD(0);
+        SendCMD(8);
+        SendCMD(55);
+        SendACMD(41);
+        SendCMD(2);
+        SendCMD(3);
 
 }
 
@@ -97,12 +106,7 @@ void Blockwrite()
 
 void BlockRead()
 {
-	SendCMD(0);
-	SendCMD(8);
-	SendCMD(55);
-	SendACMD(41);
-	SendCMD(2);
-	SendCMD(3);
+
 
 }
 
@@ -114,15 +118,39 @@ void SendCMD(int n)
 			data = 0;
 			SendRequestToSDHC();
 			PhyAdd = command;
-			data = 0x001A;
+			data = GenerateCMD(n);
 			SendRequestToSDHC();
 			GetResponseFromSDHC();
 			break;
-		case 2:
+		case 8:
 	}
 
 
 
+
+}
+
+int GenerateCMD(int n)
+{
+	int cmd;
+	if( n== (0||2||9||10))//R2
+	{
+		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;//(13:08)Index (7:6)cmd Type 5 Data present 4 Command check enable 3 crc check enable 1:0 Response type
+
+	}
+	else if (n == 41) //R3
+	{
+		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
+	}
+	else if( n== (55||3||8))
+	{
+		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
+	}
+	else
+	{
+		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
+	}
+	return cmd;
 
 }
 
