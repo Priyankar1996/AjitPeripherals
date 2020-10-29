@@ -101,12 +101,22 @@ void Initialization()
 
 void Blockwrite()
 {
-
+//CMD7
+//ACMD6
+//CMD6
+//CMD19
+//CMD24
+//CMD15
 }
 
 void BlockRead()
 {
-
+//CMD7
+//ACMD6
+//CMD6
+//CMD19
+//CMD17
+//CMD15
 
 }
 
