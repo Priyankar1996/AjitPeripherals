@@ -133,5 +133,3 @@ void SD_Card_write_pipe(uint64_t Starting_address)
 		}
 	}
 }
-
-
