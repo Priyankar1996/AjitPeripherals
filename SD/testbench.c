@@ -137,141 +137,73 @@ void BlockRead()
         SendCMD(17);
         SendCMD(15);	
 }
+void casefunc(int dat, int n)
+{
+			PhyAdd =argument;
+                        data = dat;
+                        SendRequestToSDHC();
+                        PhyAdd = command;
+                        data = GenerateCMD(n);
+                        SendRequestToSDHC();
+                        GetResponseFromSDHC();
 
+}
 void SendCMD(int n)
 {
 	switch(n)
 	{
-		case 0: PhyAdd =argument;
-			data = 0;
-			SendRequestToSDHC();
-			PhyAdd = command;
-			data = GenerateCMD(n);
-			SendRequestToSDHC();
-			GetResponseFromSDHC();
+		case 0: data = 0;
 			break;
 
-		case 2: PhyAdd =argument;
-                        data = 0;
-                        SendRequestToSDHC();
-                        PhyAdd = command;
-                        data = GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
-			break;
+		case 2: data = 0;
+                      	break;
 
-		case 3: PhyAdd =argument;
-                        data = 0;
-                        SendRequestToSDHC();
-                        PhyAdd = command;
-                        data = GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
-			break;
+		case 3: data = 0;
+                       	break;
 
-		case 6:	PhyAdd=argument;
-                        data =;
-                        SendRequestToSDHC();
-                        PhyAdd=command;
-                        data=GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
+		case 6:	data=;
                         break;
 
-		case 7: PhyAdd=argument;
-                        data=0;
-                        SendRequestToSDHC();
-                        PhyAdd=command;
-                        data=GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
+		case 7: data=0;
                         break;
 		
-		case 11:PhyAdd=argument;
-			data=0;
-			SendRequestToSDHC();
-			PhyAdd=command;
-			data=GenerateCMD(n);
-			SendRequestToSDHC();
-			GetResponseFromSDHC();
+		case 11:data=0;
 			break;
 
-		case 19:PhyAdd=argument;
-			data=0;
-			SendRequestToSDHC();
-			PhyAdd=command;
-			data=GenerateCMD(n);
-			SendRequestToSDHC();
-			GetResponseFromSDHC();
+		case 19:data=0;
 			break;
 
-		case 15:PhyAdd=argument;
-                        data=0;
-                        SendRequestToSDHC();
-                        PhyAdd=command;
-                        data=GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
+		case 15:data=0;
                         break;
 
-		case 17:PhyAdd=argument;
-                        data=;
-                        SendRequestToSDHC();
-                        PhyAdd=command;
-                        data=GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
+		case 17:data=0;
                         break;
 
-		case 24:PhyAdd=argument;
-                        data =;
-                        SendRequestToSDHC();
-                        PhyAdd=command;
-                        data=GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
+		case 24:data=;
                         break;
 
-		case 8: PhyAdd = argument;
-                        data = 0x1AA;
-                        SendRequestToSDHC();
-                        PhyAdd = command;
-                        data = GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
+		case 8: data = 0x1AA;
+                        break;
+
+		case 55:data=0;
 			break;
 
-		case 55:PhyAdd = argument;
-                        data = 0;
-                        SendRequestToSDHC();
-                        PhyAdd = command;
-                        data = GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
-			break;
+		default:data=0;
 	}
+	casefunc(data,n);
+}
 
 void sendACMD(int n)
 {
 	switch(n)
 	{
-		case 6: PhyAdd=argument;
-			data =0x2;
-			SendRequestToSDHC();
-			PhyAdd=command;
-			data=GenerateCMD(n);
-			SendRequestToSDHC();
-			GetResponseFromSDHC();
+		case 6: data =0x2;
 			break;
-		case 41:PhyAdd = argument;
-                        data = 0;
-                        SendRequestToSDHC();
-                        PhyAdd = command;
-                        data = GenerateCMD(n);
-                        SendRequestToSDHC();
-                        GetResponseFromSDHC();
-			break;
+		case 41:data = 0;
+                        break;
+		default:data =0;
 	}
+	casefunc(data,n);
 }
 
 
@@ -293,7 +225,7 @@ int GenerateCMD(int n)
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
 	}
-	else if( n== (55||3||8))
+	else if( n== (55||3||8))//R1,R7
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
 	}
