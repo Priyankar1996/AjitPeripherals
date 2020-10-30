@@ -139,10 +139,10 @@ void BlockRead()
 }
 void casefunc(int dat, int n)
 {
-			PhyAdd =argument;
+			PhyAdd =SD_Base+argument;
                         data = dat;
                         SendRequestToSDHC();
-                        PhyAdd = command;
+                        PhyAdd = SD_Base + transfer;
                         data = GenerateCMD(n);
                         SendRequestToSDHC();
                         GetResponseFromSDHC();
@@ -164,7 +164,7 @@ void SendCMD(int n)
 		case 6:	data=;
                         break;
 
-		case 7: data=0;
+		case 7: data=0;//[31:16]RCA
                         break;
 		
 		case 11:data=0;
@@ -173,19 +173,22 @@ void SendCMD(int n)
 		case 19:data=0;
 			break;
 
-		case 15:data=0;
+		case 15:data=0;//[31:16]RCA
                         break;
 
-		case 17:data=0;
+		case 17:data=0;//data address SDSC cards use byte unit address
+				//SDHC and SDXC use block unit address(512 bytes unit)
+				//read
                         break;
 
-		case 24:data=;
+		case 24:data=;//data address
+				//write
                         break;
 
 		case 8: data = 0x1AA;
                         break;
 
-		case 55:data=0;
+		case 55:data=0;	//[31:16]RCA
 			break;
 
 		default:data=0;
@@ -229,7 +232,7 @@ int GenerateCMD(int n)
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
 	}
-	else
+	else//CMD7
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
 	}
