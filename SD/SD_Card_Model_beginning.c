@@ -10,6 +10,9 @@
 
 //Registers
 // Address location are optional for SD model here.
+// But here in this define function we are giving the initial value of the register and not the
+// location as I personally don't know how to create a register and will be considering the variable as
+// register and using [pointer and address] for the address  related purpose
 
 #define CID 0x04
 #define RCA 0x1A
