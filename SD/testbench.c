@@ -83,7 +83,7 @@ int GetResponseFromSDHC()
 	return resp;
 
 }
-//DEFINE_THREAD(GetResponseFromSDHC);
+DEFINE_THREAD(GetResponseFromSDHC);
 
 
 void Initialization()
@@ -100,24 +100,34 @@ void Initialization()
 	Resp = GetResponseFromSDHC();//Contains OCR.
 	while(busy!=1)
 	{
-		SendACMD(41);//first ACMD41
+		SendCMD(55);
+		SendACMD(41);//first ACMD41 with S18R(bit 24)=0
 		Resp = GetResponseFromSDHC();
 		busy = Resp & 0x80000000;
 	}
-	SendCMD(55);
-	SendACMD(41);//with S18R(bit 24)=0
-
         SendCMD(2);
         SendCMD(3);
-
 }
 
-void UHSInitialisation()
+void UHSInitialization()
 {
+	int Resp=0,busy=0;
 	SendCMD(0);
 	SendCMD(8);
+	while(Resp!=0x1A)
+	{
+		Resp = GetResponseFromSDHC();
+	}//Voltage accepted and Check pattern echoed
 	SendCMD(55);
-	SendACMD(41);//HCS(bit 30) and S18R(bit 24)=1
+	SendACMD(41);//Inquiry ACMD41.
+	Resp = GetResponseFromSDHC();
+	while(busy!=1)
+	{
+		SendCMD(55);
+		SendACMD(41);//first ACMD41 with S18R(bit 24)=1,HCS=1
+		Resp = GetResponseFromSDHC();
+		busy = Resp & 0x80000000;
+	}
 	SendCMD(11);
 	SendCMD(2);
 	SendCMD(3);
