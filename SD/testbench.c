@@ -88,16 +88,22 @@ int GetResponseFromSDHC()
 
 void Initialization()
 {
-	int Resp=0;
+	int Resp=0,busy=0;
  	SendCMD(0);
         SendCMD(8);
 	while(Resp!=0x1A)
 	{
 		Resp = GetResponseFromSDHC();
 	}//Voltage accepted and Check pattern echoed
-        //SendCMD(55);
-	
-        SendACMD(41);//inquiry CMD41
+        SendCMD(55);
+	SendACMD(41);//inquiry ACMD41
+	Resp = GetResponseFromSDHC();//Contains OCR.
+	while(busy!=1)
+	{
+		SendACMD(41);//first ACMD41
+		Resp = GetResponseFromSDHC();
+		busy = Resp & 0x80000000;
+	}
 	SendCMD(55);
 	SendACMD(41);//with S18R(bit 24)=0
 
