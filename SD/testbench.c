@@ -70,26 +70,37 @@ void SendRequestToSDHC()
 
 DEFINE_THREAD(SendRequestToSDHC);
 
-void GetResponseFromSDHC()
+int GetResponseFromSDHC()
 {
 	
 	//int response_pipe_read_data[read_data_length];
 	/*Bits 32: Error-bit
 	  Bits 31-0: Read-Data*/
 	uint64_t read_data;
+	int resp;
 	read_uint64("out_data",read_data);
-
+	resp = read_data;
+	return resp;
 
 }
-DEFINE_THREAD(GetResponseFromSDHC);
+//DEFINE_THREAD(GetResponseFromSDHC);
 
 
 void Initialization()
 {
+	int Resp=0;
  	SendCMD(0);
         SendCMD(8);
-        SendCMD(55);
-        SendACMD(41);//with S18R(bit 24)=0
+	while(Resp!=0x1A)
+	{
+		Resp = GetResponseFromSDHC();
+	}//Voltage accepted and Check pattern echoed
+        //SendCMD(55);
+	
+        SendACMD(41);//inquiry CMD41
+	SendCMD(55);
+	SendACMD(41);//with S18R(bit 24)=0
+
         SendCMD(2);
         SendCMD(3);
 
@@ -145,7 +156,6 @@ void casefunc(int dat, int n)
                         PhyAdd = SD_Base + transfer;
                         data = GenerateCMD(n);
                         SendRequestToSDHC();
-                        GetResponseFromSDHC();
 
 }
 void SendCMD(int n)
