@@ -49,6 +49,8 @@ long int r/w = 0;
 long int bytemask;
 long int PhyAdd;
 int data;
+int OCR;
+int RCA = 0;
 
 void SendRequestToSDHC()
 {
@@ -68,7 +70,7 @@ void SendRequestToSDHC()
 }
 
 
-DEFINE_THREAD(SendRequestToSDHC);
+//DEFINE_THREAD(SendRequestToSDHC);
 
 int GetResponseFromSDHC()
 {
@@ -78,35 +80,94 @@ int GetResponseFromSDHC()
 	  Bits 31-0: Read-Data*/
 	uint64_t read_data;
 	int resp;
+	//r/w=1;
+	//PhyAdd= SD_Base + resp0;
+	//data = 0;
+	//SendRequestToSDHC();
+
 	read_uint64("out_data",read_data);
 	resp = read_data;
 	return resp;
 
 }
-DEFINE_THREAD(GetResponseFromSDHC);
+void GetBigResponse()
+{
+	uint64_t read_data;
+	int r0,r2,r4,r6;
+	//r/w = 1;
+	//data = 0;
+	//
+        //	PhyAdd= SD_Base + resp0;
+        //	SendRequestToSDHC();
+	//	read_uint64("out_data",read_data);
+	//	r0 = read_data;
+	//	PhyAdd= SD_Base + resp2;
+        //      SendRequestToSDHC();
+        //      read_uint64("out_data",read_data);
+        //      r2 = read_data;
+	//      PhyAdd= SD_Base + resp4;
+        //      SendRequestToSDHC();
+        //      read_uint64("out_data",read_data);
+        //      r4 = read_data;
+	//      PhyAdd= SD_Base + resp6;
+        //      SendRequestToSDHC();
+        //      read_uint64("out_data",read_data);
+        //      r6 = read_data;
+	
+}
+
+//DEFINE_THREAD(GetResponseFromSDHC);
 
 
-void Initialization()
+int Initialization()
 {
 	int Resp=0,busy=0;
+	int flag=0;
+
  	SendCMD(0);
+
         SendCMD(8);
 	while(Resp!=0x1A)
 	{
 		Resp = GetResponseFromSDHC();
 	}//Voltage accepted and Check pattern echoed
         SendCMD(55);
-	SendACMD(41);//inquiry ACMD41
+	Resp = GetResponseFromSDHC();
+	if(!Resp)
+	{
+		flag = 1 ;
+		return flag;
+	}
+	SendACMD(411);//inquiry ACMD41
 	Resp = GetResponseFromSDHC();//Contains OCR.
-	while(busy!=1)
+	OCR = (Resp & 0x00111100);
+
+	while(!busy)
 	{
 		SendCMD(55);
-		SendACMD(41);//first ACMD41 with S18R(bit 24)=0
 		Resp = GetResponseFromSDHC();
-		busy = Resp & 0x80000000;
+		if(!Resp)
+		{
+			flag =1;
+			return flag;
+		}
+	        SendACMD(412);//first ACMD41 with S18R(bit 24)=0
+		Resp = GetResponseFromSDHC();
+		CCS = Resp >> 30;
+		if(CCS == 0)
+			fprintf(stderr,"SDSC\n");
+		else
+			fprintf(stderr,"SDHC or SDXC\n");
+
+		busy = Resp >> 31;
 	}
         SendCMD(2);
+	GetBigResponse();//CID
         SendCMD(3);
+	Resp = GetResponseFromSDHC();
+	RCA = Resp & 0x11110000;
+	return flag;
+
 }
 
 void UHSInitialization()
@@ -119,12 +180,12 @@ void UHSInitialization()
 		Resp = GetResponseFromSDHC();
 	}//Voltage accepted and Check pattern echoed
 	SendCMD(55);
-	SendACMD(41);//Inquiry ACMD41.
+	SendACMD(411);//Inquiry ACMD41.
 	Resp = GetResponseFromSDHC();
 	while(busy!=1)
 	{
 		SendCMD(55);
-		SendACMD(41);//first ACMD41 with S18R(bit 24)=1,HCS=1
+		SendACMD(412);//first ACMD41 with S18R(bit 24)=1,HCS=1
 		Resp = GetResponseFromSDHC();
 		busy = Resp & 0x80000000;
 	}
@@ -214,7 +275,7 @@ void SendCMD(int n)
 		case 8: data = 0x1AA;
                         break;
 
-		case 55:data=0;	//[31:16]RCA
+		case 55:data= RCA ;	//[31:16]RCA
 			break;
 
 		default:data=0;
@@ -228,8 +289,10 @@ void sendACMD(int n)
 	{
 		case 6: data =0x2;
 			break;
-		case 41:data = 0;
+		case 411:data = 0;
                         break;
+		case 412:data = OCR;
+			 break;
 		default:data =0;
 	}
 	casefunc(data,n);
@@ -250,8 +313,9 @@ int GenerateCMD(int n)
 		  (1:0) Response type*/
 
 	}
-	else if (n == 41) //R3
+	else if (n == 411 || 412) //R3
 	{
+		n=41;
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
 	}
 	else if( n== (55||3||8))//R1,R7
@@ -287,10 +351,15 @@ int main()
 	//Test single block read-T3
 	//Test multiple block write-T4
 	//Test multiple block read-T5
-	
+	int err;
 	while(1)
 	{
-		Initialization();
+		err=Initialization();
+		if(err)
+			fprintf(stderr,"Error in Initialization");
+		else
+			fprintf(stderr,"Succesfully Initialized");
+
 		Blockwrite();
 		BlockRead();
 
