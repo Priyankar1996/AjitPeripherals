@@ -172,7 +172,7 @@ int Initialization()
 
 void UHSInitialization()
 {
-	int Resp=0,busy=0;
+	int Resp=0,busy=0,flag=0;
 	SendCMD(0);
 	SendCMD(8);
 	while(Resp!=0x1A)
@@ -190,9 +190,30 @@ void UHSInitialization()
 		busy = Resp & 0x80000000;
 	}
 	SendCMD(11);
+	Resp = GetResponseFromSDHC();
+	if(!Resp)
+	{
+		flag=1;
+		fprintf(stderr,"Switching not possible.Check the following:\n 1.Voltage Switch Support \n 2.Incorrect ACMD41(S18)\n 3.Not in ready state\n 4.Voltage already switched");
+		return flag;
+	}
+	checkDATline();
 	SendCMD(2);
+	GetBigResponse()
 	SendCMD(3);
+	Resp = GetResponseFromSDHC();
+	RCA= Resp & 0x11110000;
 	SendCMD(7);
+	Resp = GetResponseFromSDHC();
+	while(checkDATLine()!=0)
+	{
+		checkDATLine();
+	}
+	//Check CARD_IS_LOCKED bit in Response
+	Card_Is_Locked = Resp & 0x200000000
+	if(Card_Is_Locked)
+	{
+		SendCMD(42);
 	SendCMD(42);
 	SendCMD(55);
 	SendACMD(6);
