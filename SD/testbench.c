@@ -153,7 +153,7 @@ int Initialization()
 		}
 	        SendACMD(412);//first ACMD41 with S18R(bit 24)=0
 		Resp = GetResponseFromSDHC();
-		CCS = Resp >> 30;
+		CCS = (Resp >> 30) & 1;
 		if(CCS == 0)
 			fprintf(stderr,"SDSC\n");
 		else
@@ -180,6 +180,12 @@ void UHSInitialization()
 		Resp = GetResponseFromSDHC();
 	}//Voltage accepted and Check pattern echoed
 	SendCMD(55);
+	Resp = GetResponseFromSDHC();
+	if(!Resp)
+	{
+		flag = 1 ;
+		return flag;
+	}
 	SendACMD(411);//Inquiry ACMD41.
 	Resp = GetResponseFromSDHC();
 	while(busy!=1)
@@ -217,8 +223,12 @@ void UHSInitialization()
 		Resp = GetResponseFromSDHC();
 	}
 	SendCMD(55);
+	Resp = GetResponseFromSDHC();
 	SendACMD(6);
+	Resp = GetResponseFromSDHC();
+	SendCMD(6);
 	SendCMD(19);
+	Resp = GetResponseFromSDHC();
 }
 void Blockwrite()
 //CMD7
