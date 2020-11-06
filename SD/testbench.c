@@ -197,7 +197,7 @@ void UHSInitialization()
 		fprintf(stderr,"Switching not possible.Check the following:\n 1.Voltage Switch Support \n 2.Incorrect ACMD41(S18)\n 3.Not in ready state\n 4.Voltage already switched");
 		return flag;
 	}
-	checkDATline();
+	checkDATline();//dat[3:0]=0000 indicates switching successful.
 	SendCMD(2);
 	GetBigResponse()
 	SendCMD(3);
@@ -207,14 +207,15 @@ void UHSInitialization()
 	Resp = GetResponseFromSDHC();
 	while(checkDATLine()!=0)
 	{
-		checkDATLine();
+		checkDATLine();//check until busy bit is present in data line.
 	}
 	//Check CARD_IS_LOCKED bit in Response
 	Card_Is_Locked = Resp & 0x200000000
 	if(Card_Is_Locked)
 	{
 		SendCMD(42);
-	SendCMD(42);
+		Resp = GetResponseFromSDHC();
+	}
 	SendCMD(55);
 	SendACMD(6);
 	SendCMD(19);
