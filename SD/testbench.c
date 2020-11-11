@@ -226,9 +226,15 @@ void UHSInitialization()
 	Resp = GetResponseFromSDHC();
 	SendACMD(6);
 	Resp = GetResponseFromSDHC();
-	SendCMD(6);
-	SendCMD(19);
+	SendCMD(6);//set-mode cmd(6)
 	Resp = GetResponseFromSDHC();
+	int count=40;
+	while(count!=0)
+	{
+		SendCMD(19);// to be used only if SDR50 and SDR104 mode is used.
+		Resp = GetResponseFromSDHC();
+		count--;
+	}
 }
 void Blockwrite()
 //CMD7
@@ -280,7 +286,7 @@ void SendCMD(int n)
 		case 3: data = 0;
                        	break;
 
-		case 6:	data=;
+		case 6:	data=0x80000000;
                         break;
 
 		case 7: data=0;//[31:16]RCA
@@ -299,6 +305,9 @@ void SendCMD(int n)
 				//SDHC and SDXC use block unit address(512 bytes unit)
 				//read
                         break;
+			
+		case 19:data=0;
+			break;
 
 		case 24:data=;//data address
 				//write
