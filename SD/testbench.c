@@ -173,6 +173,7 @@ int Initialization()
 void UHSInitialization()
 {
 	int Resp=0,busy=0,flag=0;
+	int Card_Is_Locked=0;
 	SendCMD(0);
 	SendCMD(8);
 	while(Resp!=0x1A)
@@ -188,12 +189,25 @@ void UHSInitialization()
 	}
 	SendACMD(411);//Inquiry ACMD41.
 	Resp = GetResponseFromSDHC();
+	OCR = (Resp & 0x00111100);
 	while(busy!=1)
 	{
 		SendCMD(55);
 		SendACMD(412);//first ACMD41 with S18R(bit 24)=1,HCS=1
 		Resp = GetResponseFromSDHC();
-		busy = Resp & 0x80000000;
+		busy = Resp>>31;
+	}
+	if(((Resp>>30)&1)== 0)//CCS
+	{
+		fprintf(stderr,"SDSC\n");
+		flag = 1;
+		return flag;
+	}
+	if(((Resp>>24)&1)== 0)//S18R
+	{
+		fprintf(stderr,"S18R not one\n");
+		flag =1;
+		return flag;
 	}
 	SendCMD(11);
 	Resp = GetResponseFromSDHC();
@@ -216,7 +230,7 @@ void UHSInitialization()
 		checkDATLine();//check until busy bit is present in data line.
 	}
 	//Check CARD_IS_LOCKED bit in Response
-	Card_Is_Locked = Resp & 0x200000000
+	Card_Is_Locked = (Resp & 0x02000000)>>25;
 	if(Card_Is_Locked)
 	{
 		SendCMD(42);
@@ -236,14 +250,9 @@ void UHSInitialization()
 		count--;
 	}
 }
-void Blockwrite()
-//CMD7
-//ACMD6
-//CMD6
-//CMD19
-//CMD24
-//CMD15
+int Blockwrite()
 {
+	int flag = 0;
 	SendCMD(7);
 	SendCMD(55);
 	SendACMD(6);
@@ -251,9 +260,10 @@ void Blockwrite()
 	SendCMD(19);
 	SendCMD(24);
 	SendCMD(15);
+	return flag ;
 }
 
-void BlockRead()
+int BlockRead()
 {
 	SendCMD(7);
         SendCMD(55);
@@ -392,18 +402,36 @@ int main()
 	//Test single block read-T3
 	//Test multiple block write-T4
 	//Test multiple block read-T5
-	int err;
+	int err,i;
+	int read_data;
 	while(1)
 	{
 		err=Initialization();
 		if(err)
+		{
 			fprintf(stderr,"Error in Initialization");
+			break;
+		}
 		else
 			fprintf(stderr,"Succesfully Initialized");
-
-		Blockwrite();
-		BlockRead();
-
+		for(i=0; i<1024; i++)
+		{
+			err = Blockwrite(i,i);
+			if(err)
+	                {
+                	        fprintf(stderr,"Error in BlockWrite");
+                        	break;
+        	        }
+		}
+		for(i=0;i<1024;i++)
+		{
+			read_data=BlockRead();
+			if(read_data!=i)
+			{
+				fprintf(stderr,"Data %d does not match with expected %d",read_data,i);
+				break;
+			}
+		}
 	}
 
 	return 0;
