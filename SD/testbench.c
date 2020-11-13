@@ -217,7 +217,7 @@ void UHSInitialization()
 		fprintf(stderr,"Switching not possible.Check the following:\n 1.Voltage Switch Support \n 2.Incorrect ACMD41(S18)\n 3.Not in ready state\n 4.Voltage already switched");
 		return flag;
 	}
-	checkDATline();//dat[3:0]=0000 indicates switching successful.
+	checkDATline();//dat[3:0]=0000 indicates switching successful.This function will check [23:20] bit in the present state register.
 	SendCMD(2);
 	GetBigResponse()
 	SendCMD(3);
