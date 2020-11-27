@@ -382,7 +382,7 @@ int GenerateCMD(int n)
 }
 
 
-int main()
+int main(int argc, char *argv[])
 {
 
 	//Test initialization-T1
@@ -406,7 +406,15 @@ int main()
 	int read_data;
 	while(1)
 	{
-		err=Initialization();
+		if (argc <2)
+		{
+			fprintf(stderr," 0 for Initialization\n 1 for UHSInitialization\n");
+			return(1);
+		}
+		if ( atoi(argv[1] ==0)
+			err=Initialization();
+		else
+		    err =UHSInitialization();
 		if(err)
 		{
 			fprintf(stderr,"Error in Initialization");
