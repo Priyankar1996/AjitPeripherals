@@ -94,25 +94,25 @@ void GetBigResponse()
 {
 	uint64_t read_data;
 	int r0,r2,r4,r6;
-	//r/w = 1;
-	//data = 0;
-	//
-        //	PhyAdd= SD_Base + resp0;
-        //	SendRequestToSDHC();
-	//	read_uint64("out_data",read_data);
-	//	r0 = read_data;
-	//	PhyAdd= SD_Base + resp2;
-        //      SendRequestToSDHC();
-        //      read_uint64("out_data",read_data);
-        //      r2 = read_data;
-	//      PhyAdd= SD_Base + resp4;
-        //      SendRequestToSDHC();
-        //      read_uint64("out_data",read_data);
-        //      r4 = read_data;
-	//      PhyAdd= SD_Base + resp6;
-        //      SendRequestToSDHC();
-        //      read_uint64("out_data",read_data);
-        //      r6 = read_data;
+	r/w = 1;
+	data = 0;
+	
+              PhyAdd= SD_Base + resp0;
+              SendRequestToSDHC();
+	      read_uint64("out_data",read_data);
+	      r0 = read_data;
+	      PhyAdd= SD_Base + resp2;
+              SendRequestToSDHC();
+              read_uint64("out_data",read_data);
+              r2 = read_data;
+	      PhyAdd= SD_Base + resp4;
+              SendRequestToSDHC();
+              read_uint64("out_data",read_data);
+              r4 = read_data;
+	      PhyAdd= SD_Base + resp6;
+              SendRequestToSDHC();
+              read_uint64("out_data",read_data);
+              r6 = read_data;
 	
 }
 
