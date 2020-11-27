@@ -250,28 +250,32 @@ void UHSInitialization()
 		count--;
 	}
 }
-int Blockwrite()
+int writed;
+int addressd;
+int Blockwrite(int x, int y)
 {
 	int flag = 0;
-	SendCMD(7);
-	SendCMD(55);
-	SendACMD(6);
-	SendCMD(6);
+	writed = x;
+	addressd=y;
 	SendCMD(19);
+	Resp = GetResponseFromSDHC();
 	SendCMD(24);
+	Resp = GetResponseFromSDHC();
 	SendCMD(15);
+	Resp = GetResponseFromSDHC();
 	return flag ;
 }
 
 int BlockRead()
 {
-	SendCMD(7);
-        SendCMD(55);
-        SendACMD(6);
-        SendCMD(6);
+	int flag =0;
 	SendCMD(19);
+	Resp = GetResponseFromSDHC();
         SendCMD(17);
-        SendCMD(15);	
+	Resp = GetResponseFromSDHC();
+        SendCMD(15);
+	Resp = GetResponseFromSDHC();
+	return flag;
 }
 void casefunc(int dat, int n)
 {
@@ -319,7 +323,7 @@ void SendCMD(int n)
 		case 19:data=0;
 			break;
 
-		case 24:data=;//data address
+		case 24:data=writed;//data address
 				//write
                         break;
 
