@@ -8,7 +8,6 @@
 #include <pipeHandler.h>
 #include <stdbool.h>
 
-//Registers
 // Address location are optional for SD model here.
 // But here in this define function we are giving the initial value of the register and not the
 // location as I personally don't know how to create a register and will be considering the variable as
