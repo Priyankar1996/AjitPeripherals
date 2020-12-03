@@ -45,12 +45,14 @@
 #define SD_Base 0x00//SD base address
   
 long int lockbit=0;
-long int r/w = 0;
+long int rw = 0;
 long int bytemask;
 long int PhyAdd;
 int data;
 int OCR;
 int RCA = 0;
+int writed;
+int addressd;
 
 void SendRequestToSDHC()
 {
@@ -62,11 +64,133 @@ void SendRequestToSDHC()
 	uint64_t write_data0;
 	uint16_t write_data1;
 	
-	write_data0 = (lockbit<<63)|(r/w<<62)|(bytemask<<58)|(PhyAdd<<22)|(data>>10);
+	write_data0 = (lockbit<<63)|(rw<<62)|(bytemask<<58)|(PhyAdd<<22)|(data>>10);
 	write_data1 = (data<<6);
 
 	write_uint64 ("in_data_0",write_data0);
 	write_uint16 ("in_data_1",write_data1);
+}
+void casefunc(int dat, int n)
+{
+			PhyAdd =SD_Base+argument;
+                        data = dat;
+                        SendRequestToSDHC();
+                        PhyAdd = SD_Base + transfer;
+                        data = GenerateCMD(n);
+                        SendRequestToSDHC();
+
+}
+void SendCMD(int n)
+{
+	switch(n)
+	{
+		case 0: data = 0;
+			break;
+
+		case 2: data = 0;
+                      	break;
+
+		case 3: data = 0;
+                       	break;
+
+		case 6:	data=0x80000000;
+                        break;
+
+		case 7: data=0;//[31:16]RCA
+                        break;
+		
+		case 11:data=0;
+			break;
+
+		case 19:data=0;
+			break;
+
+		case 15:data=0;//[31:16]RCA
+                        break;
+
+		case 17:data=0;//data address SDSC cards use byte unit address
+				//SDHC and SDXC use block unit address(512 bytes unit)
+				//read
+                        break;
+			
+		//case 19:data=0;
+		//	break;
+
+		case 24:data=writed;//data address
+				//write
+                        break;
+
+		case 8: data = 0x1AA;
+                        break;
+
+		case 55:data= RCA ;	//[31:16]RCA
+			break;
+
+		default:data=0;
+	}
+	casefunc(data,n);
+}
+
+void SendACMD(int n)
+{
+	switch(n)
+	{
+		case 6: data =0x2;
+			break;
+		case 411:data = 0;
+                        break;
+		case 412:data = OCR;
+			 break;
+		default:data =0;
+	}
+	casefunc(data,n);
+}
+
+
+int GenerateCMD(int n)
+{
+	int cmd;
+	if( n== (0||2||9||10))//R2
+	{
+		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
+		/*(13:08)Index 
+		  (7:6)cmd Type 
+		  5 Data present 
+		  4 Command check enable 
+		  3 crc check enable 
+		  (1:0) Response type*/
+
+	}
+	else if (n == 411 || 412) //R3
+	{
+		n=41;
+		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
+	}
+	else if( n== (55||3||8))//R1,R7
+	{
+		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
+	}
+	else//CMD7
+	{
+		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
+	}
+	return cmd;
+
+}
+int checkDATline()
+{
+
+	uint64_t read_data;
+       	int resp;
+	rw = 1;
+	PhyAdd = SD_Base + present ;
+	data = 0;
+	SendRequestToSDHC();
+	
+	read_data = read_uint64("out_data");
+	resp = (read_data >> 20) & 0xf;
+	return resp;
+		
 }
 
 
@@ -80,12 +204,12 @@ int GetResponseFromSDHC()
 	  Bits 31-0: Read-Data*/
 	uint64_t read_data;
 	int resp;
-	//r/w=1;
-	//PhyAdd= SD_Base + resp0;
-	//data = 0;
-	//SendRequestToSDHC();
+	rw=1;
+	PhyAdd= SD_Base + resp0;
+	data = 0;
+	SendRequestToSDHC();
 
-	read_uint64("out_data",read_data);
+	read_data = read_uint64("out_data");
 	resp = read_data;
 	return resp;
 
@@ -94,24 +218,24 @@ void GetBigResponse()
 {
 	uint64_t read_data;
 	int r0,r2,r4,r6;
-	r/w = 1;
+	rw = 1;
 	data = 0;
 	
               PhyAdd= SD_Base + resp0;
               SendRequestToSDHC();
-	      read_uint64("out_data",read_data);
+	      read_data = read_uint64("out_data");
 	      r0 = read_data;
 	      PhyAdd= SD_Base + resp2;
               SendRequestToSDHC();
-              read_uint64("out_data",read_data);
+              read_data = read_uint64("out_data");
               r2 = read_data;
 	      PhyAdd= SD_Base + resp4;
               SendRequestToSDHC();
-              read_uint64("out_data",read_data);
+              read_data = read_uint64("out_data");
               r4 = read_data;
 	      PhyAdd= SD_Base + resp6;
               SendRequestToSDHC();
-              read_uint64("out_data",read_data);
+              read_data = read_uint64("out_data");
               r6 = read_data;
 	
 }
@@ -123,7 +247,7 @@ int Initialization()
 {
 	int Resp=0,busy=0;
 	int flag=0;
-
+	int CCS;
  	SendCMD(0);
 
         SendCMD(8);
@@ -170,7 +294,7 @@ int Initialization()
 
 }
 
-void UHSInitialization()
+int UHSInitialization()
 {
 	int Resp=0,busy=0,flag=0;
 	int Card_Is_Locked=0;
@@ -217,17 +341,23 @@ void UHSInitialization()
 		fprintf(stderr,"Switching not possible.Check the following:\n 1.Voltage Switch Support \n 2.Incorrect ACMD41(S18)\n 3.Not in ready state\n 4.Voltage already switched");
 		return flag;
 	}
-	checkDATline();//dat[3:0]=1111 indicates switching successful.This function will check [23:20] bit in the present state register.
+	int a = checkDATline();
+	while(a!=0xf)
+	{
+		a = checkDATline();//dat[3:0]=1111 indicates switching successful.This function will check [23:20] bit in the present state register.
+	}
+	a =0;
 	SendCMD(2);
-	GetBigResponse()
+	GetBigResponse();
 	SendCMD(3);
 	Resp = GetResponseFromSDHC();
 	RCA= Resp & 0x11110000;
 	SendCMD(7);
 	Resp = GetResponseFromSDHC();
-	while(checkDATLine()!=0)
+	a = checkDATline();
+	while(a!=0)
 	{
-		checkDATLine();//check until busy bit is present in data line.
+		a = checkDATline();//check until busy bit is present in data line.
 	}
 	//Check CARD_IS_LOCKED bit in Response
 	Card_Is_Locked = (Resp & 0x02000000)>>25;
@@ -250,11 +380,12 @@ void UHSInitialization()
 		count--;
 	}
 }
-int writed;
-int addressd;
+//int writed;
+//int addressd;
 int Blockwrite(int x, int y)
 {
 	int flag = 0;
+	int Resp;
 	writed = x;
 	addressd=y;
 	SendCMD(19);
@@ -269,6 +400,7 @@ int Blockwrite(int x, int y)
 int BlockRead()
 {
 	int flag =0;
+	int Resp;
 	SendCMD(19);
 	Resp = GetResponseFromSDHC();
         SendCMD(17);
@@ -276,113 +408,6 @@ int BlockRead()
         SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag;
-}
-void casefunc(int dat, int n)
-{
-			PhyAdd =SD_Base+argument;
-                        data = dat;
-                        SendRequestToSDHC();
-                        PhyAdd = SD_Base + transfer;
-                        data = GenerateCMD(n);
-                        SendRequestToSDHC();
-
-}
-void SendCMD(int n)
-{
-	switch(n)
-	{
-		case 0: data = 0;
-			break;
-
-		case 2: data = 0;
-                      	break;
-
-		case 3: data = 0;
-                       	break;
-
-		case 6:	data=0x80000000;
-                        break;
-
-		case 7: data=0;//[31:16]RCA
-                        break;
-		
-		case 11:data=0;
-			break;
-
-		case 19:data=0;
-			break;
-
-		case 15:data=0;//[31:16]RCA
-                        break;
-
-		case 17:data=0;//data address SDSC cards use byte unit address
-				//SDHC and SDXC use block unit address(512 bytes unit)
-				//read
-                        break;
-			
-		case 19:data=0;
-			break;
-
-		case 24:data=writed;//data address
-				//write
-                        break;
-
-		case 8: data = 0x1AA;
-                        break;
-
-		case 55:data= RCA ;	//[31:16]RCA
-			break;
-
-		default:data=0;
-	}
-	casefunc(data,n);
-}
-
-void sendACMD(int n)
-{
-	switch(n)
-	{
-		case 6: data =0x2;
-			break;
-		case 411:data = 0;
-                        break;
-		case 412:data = OCR;
-			 break;
-		default:data =0;
-	}
-	casefunc(data,n);
-}
-
-
-int GenerateCMD(int n)
-{
-	int cmd;
-	if( n== (0||2||9||10))//R2
-	{
-		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
-		/*(13:08)Index 
-		  (7:6)cmd Type 
-		  5 Data present 
-		  4 Command check enable 
-		  3 crc check enable 
-		  (1:0) Response type*/
-
-	}
-	else if (n == 411 || 412) //R3
-	{
-		n=41;
-		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
-	}
-	else if( n== (55||3||8))//R1,R7
-	{
-		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
-	}
-	else//CMD7
-	{
-		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
-	}
-	return cmd;
-
 }
 
 
@@ -415,7 +440,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr," 0 for Initialization\n 1 for UHSInitialization\n");
 			return(1);
 		}
-		if ( atoi(argv[1] ==0)
+		if ( atoi(argv[1]) ==0)
 			err=Initialization();
 		else
 		    err =UHSInitialization();
