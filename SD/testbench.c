@@ -94,25 +94,25 @@ void GetBigResponse()
 {
 	uint64_t read_data;
 	int r0,r2,r4,r6;
-	//r/w = 1;
-	//data = 0;
-	//
-        //	PhyAdd= SD_Base + resp0;
-        //	SendRequestToSDHC();
-	//	read_uint64("out_data",read_data);
-	//	r0 = read_data;
-	//	PhyAdd= SD_Base + resp2;
-        //      SendRequestToSDHC();
-        //      read_uint64("out_data",read_data);
-        //      r2 = read_data;
-	//      PhyAdd= SD_Base + resp4;
-        //      SendRequestToSDHC();
-        //      read_uint64("out_data",read_data);
-        //      r4 = read_data;
-	//      PhyAdd= SD_Base + resp6;
-        //      SendRequestToSDHC();
-        //      read_uint64("out_data",read_data);
-        //      r6 = read_data;
+	r/w = 1;
+	data = 0;
+	
+              PhyAdd= SD_Base + resp0;
+              SendRequestToSDHC();
+	      read_uint64("out_data",read_data);
+	      r0 = read_data;
+	      PhyAdd= SD_Base + resp2;
+              SendRequestToSDHC();
+              read_uint64("out_data",read_data);
+              r2 = read_data;
+	      PhyAdd= SD_Base + resp4;
+              SendRequestToSDHC();
+              read_uint64("out_data",read_data);
+              r4 = read_data;
+	      PhyAdd= SD_Base + resp6;
+              SendRequestToSDHC();
+              read_uint64("out_data",read_data);
+              r6 = read_data;
 	
 }
 
@@ -250,28 +250,32 @@ void UHSInitialization()
 		count--;
 	}
 }
-int Blockwrite()
+int writed;
+int addressd;
+int Blockwrite(int x, int y)
 {
 	int flag = 0;
-	SendCMD(7);
-	SendCMD(55);
-	SendACMD(6);
-	SendCMD(6);
+	writed = x;
+	addressd=y;
 	SendCMD(19);
+	Resp = GetResponseFromSDHC();
 	SendCMD(24);
+	Resp = GetResponseFromSDHC();
 	SendCMD(15);
+	Resp = GetResponseFromSDHC();
 	return flag ;
 }
 
 int BlockRead()
 {
-	SendCMD(7);
-        SendCMD(55);
-        SendACMD(6);
-        SendCMD(6);
+	int flag =0;
 	SendCMD(19);
+	Resp = GetResponseFromSDHC();
         SendCMD(17);
-        SendCMD(15);	
+	Resp = GetResponseFromSDHC();
+        SendCMD(15);
+	Resp = GetResponseFromSDHC();
+	return flag;
 }
 void casefunc(int dat, int n)
 {
@@ -319,7 +323,7 @@ void SendCMD(int n)
 		case 19:data=0;
 			break;
 
-		case 24:data=;//data address
+		case 24:data=writed;//data address
 				//write
                         break;
 
@@ -382,7 +386,7 @@ int GenerateCMD(int n)
 }
 
 
-int main()
+int main(int argc, char *argv[])
 {
 
 	//Test initialization-T1
@@ -406,7 +410,15 @@ int main()
 	int read_data;
 	while(1)
 	{
-		err=Initialization();
+		if (argc <2)
+		{
+			fprintf(stderr," 0 for Initialization\n 1 for UHSInitialization\n");
+			return(1);
+		}
+		if ( atoi(argv[1] ==0)
+			err=Initialization();
+		else
+		    err =UHSInitialization();
 		if(err)
 		{
 			fprintf(stderr,"Error in Initialization");
