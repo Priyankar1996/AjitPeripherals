@@ -72,26 +72,12 @@ void SendRequestToSDHC()
 }
 void casefunc(int dat, int n)
 {
-
 			PhyAdd =SD_Base+argument;
                         data = dat;
                         SendRequestToSDHC();
                         PhyAdd = SD_Base + transfer;
-			bytemask = 3;
-                        data = GenerateTran(n);
-                        SendRequestToSDHC();
-			PhyAdd = SD_Base + command;
-			bytemask = 3;
                         data = GenerateCMD(n);
                         SendRequestToSDHC();
-
-
-	PhyAdd =SD_Base+argument;
-    data = dat;
-    SendRequestToSDHC();
-    PhyAdd = SD_Base + transfer;
-    data = GenerateCMD(n);
-    SendRequestToSDHC();
 
 }
 void SendCMD(int n)
@@ -110,13 +96,8 @@ void SendCMD(int n)
 		case 6:	data=0x80000000;
                         break;
 
-
-		case 7: data= RCA ;//[31:16]RCA
+		case 7: data=0;//[31:16]RCA
                         break;
-
-		case 7: data=RCA;//[31:16]RCA
-                break;
-
 		
 		case 11:data=0;
 			break;
@@ -124,20 +105,23 @@ void SendCMD(int n)
 		case 19:data=0;
 			break;
 
-		case 15:data= RCA;//[31:16]RCA
+		case 15:data=0;//[31:16]RCA
                         break;
 
 		case 17:data=0;//data address SDSC cards use byte unit address
 				//SDHC and SDXC use block unit address(512 bytes unit)
 				//read
-                break;
+                        break;
+			
+		//case 19:data=0;
+		//	break;
 
 		case 24:data=writed;//data address
 				//write
-                break;
+                        break;
 
 		case 8: data = 0x1AA;
-                break;
+                        break;
 
 		case 55:data= RCA ;	//[31:16]RCA
 			break;
@@ -152,9 +136,9 @@ void SendACMD(int n)
 	switch(n)
 	{
 		case 6: data =0x2;
-			    break;
+			break;
 		case 411:data = 0;
-                 break;
+                        break;
 		case 412:data = OCR;
 			 break;
 		default:data =0;
@@ -166,7 +150,7 @@ void SendACMD(int n)
 int GenerateCMD(int n)
 {
 	int cmd;
-	if( (n == 0)||(n==2)||(n==9)||(n==10))//R2
+	if( n== (0||2||9||10))//R2
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
 		/*(13:08)Index 
@@ -177,53 +161,22 @@ int GenerateCMD(int n)
 		  (1:0) Response type*/
 
 	}
-	else if ((n == 411) || (n == 412)) //R3
+	else if (n == 411 || 412) //R3
 	{
 		n=41;
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
 	}
-	else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24))//R1,R7
+	else if( n== (55||3||8))//R1,R7
 	{
-		if((n==17)||(n==24))
-			cmd = (n<<8)|(0<<6)|(1<<5)|(1<<4)|(1<<3)|(0<<2)|2;
-		else
-			cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
+		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
 	}
 	else//CMD7
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
 	}
-	return (cmd & 0x0000ffff);
+	return cmd;
 
 }
-int GenerateTran(int n)
-{
-	// 5 Multi/single block
-	// 4 Data Transfer Direction select
-	// (3:2) Auto CMD Enable
-	// 1 Block Count Enable
-	// 0 DMA enable
-	int tran=0;
-	if ( (n==17))
-	{
-		tran = 8;
-
-	}
-	else if ( n== 18)
-		tran = 24;
-	else if (n ==24 )
-		tran = 0;
-	else if (n ==25)
-		tran = 16;
-	else 
-		tran =0;
-	return tran;	
-
-
-
-
-}
-
 int checkDATline()
 {
 
@@ -236,7 +189,8 @@ int checkDATline()
 	
 	read_data = read_uint64("out_data");
 	resp = (read_data >> 20) & 0xf;
-	return resp;		
+	return resp;
+		
 }
 
 
@@ -269,17 +223,17 @@ void GetBigResponse()
 	
               PhyAdd= SD_Base + resp0;
               SendRequestToSDHC();
-	      	  read_data = read_uint64("out_data");
-	      	  r0 = read_data;
-	          PhyAdd= SD_Base + resp2;
+	      read_data = read_uint64("out_data");
+	      r0 = read_data;
+	      PhyAdd= SD_Base + resp2;
               SendRequestToSDHC();
               read_data = read_uint64("out_data");
               r2 = read_data;
-	          PhyAdd= SD_Base + resp4;
+	      PhyAdd= SD_Base + resp4;
               SendRequestToSDHC();
               read_data = read_uint64("out_data");
               r4 = read_data;
-	          PhyAdd= SD_Base + resp6;
+	      PhyAdd= SD_Base + resp6;
               SendRequestToSDHC();
               read_data = read_uint64("out_data");
               r6 = read_data;
@@ -332,7 +286,7 @@ int Initialization()
 		busy = Resp >> 31;
 	}
         SendCMD(2);
-	GetBigResponse();//CID --not printed as of now
+	GetBigResponse();//CID
         SendCMD(3);
 	Resp = GetResponseFromSDHC();
 	RCA = Resp & 0x11110000;
