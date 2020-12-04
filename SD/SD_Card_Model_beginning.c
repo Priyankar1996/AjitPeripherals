@@ -51,7 +51,7 @@ void read_data_request()
 }
 DEFINE_THREAD(read_data_request);
 
-//Read Acknowledge function
+//Read Acknowledge fn
 void read_data_request_ack(uint1_t SD_Busy)
 {
 	if(SD_Busy == 1 ) 
