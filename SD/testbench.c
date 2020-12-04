@@ -106,8 +106,8 @@ void SendCMD(int n)
 		case 7: data= RCA ;//[31:16]RCA
                         break;
 
-		case 7: data=RCA;//[31:16]RCA
-                break;
+		//case 7: data=RCA;//[31:16]RCA
+                //break;
 
 		
 		case 11:data=0;
