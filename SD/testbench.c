@@ -85,14 +85,6 @@ void casefunc(int dat, int n)
                         data = GenerateCMD(n);
                         SendRequestToSDHC();
 
-
-	PhyAdd =SD_Base+argument;
-    data = dat;
-    SendRequestToSDHC();
-    PhyAdd = SD_Base + transfer;
-    data = GenerateCMD(n);
-    SendRequestToSDHC();
-
 }
 void SendCMD(int n)
 {
