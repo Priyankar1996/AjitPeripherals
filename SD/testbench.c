@@ -76,6 +76,11 @@ void casefunc(int dat, int n)
                         data = dat;
                         SendRequestToSDHC();
                         PhyAdd = SD_Base + transfer;
+			bytemask = 3;
+                        data = GenerateTran(n);
+                        SendRequestToSDHC();
+			PhyAdd = SD_Base + command;
+			bytemask = 3;
                         data = GenerateCMD(n);
                         SendRequestToSDHC();
 
@@ -96,7 +101,7 @@ void SendCMD(int n)
 		case 6:	data=0x80000000;
                         break;
 
-		case 7: data=;//[31:16]RCA
+		case 7: data= RCA ;//[31:16]RCA
                         break;
 		
 		case 11:data=0;
@@ -105,7 +110,7 @@ void SendCMD(int n)
 		case 19:data=0;
 			break;
 
-		case 15:data=0;//[31:16]RCA
+		case 15:data= RCA;//[31:16]RCA
                         break;
 
 		case 17:data=0;//data address SDSC cards use byte unit address
@@ -174,9 +179,37 @@ int GenerateCMD(int n)
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
 	}
-	return cmd;
+	return (cmd & 0x0000ffff);
 
 }
+int GenerateTran(int n)
+{
+	// 5 Multi/single block
+	// 4 Data Transfer Direction select
+	// (3:2) Auto CMD Enable
+	// 1 Block Count Enable
+	// 0 DMA enable
+	int tran=0;
+	if ( (n==17))
+	{
+		tran = 8;
+
+	}
+	else if ( n== 18)
+		tran = 24;
+	else if (n ==24 )
+		tran = 0;
+	else if (n ==25)
+		tran = 16;
+	else 
+		tran =0;
+	return tran;	
+
+
+
+
+}
+
 int checkDATline()
 {
 
