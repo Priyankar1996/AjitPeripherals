@@ -223,17 +223,17 @@ void GetBigResponse()
 	
               PhyAdd= SD_Base + resp0;
               SendRequestToSDHC();
-	      read_data = read_uint64("out_data");
-	      r0 = read_data;
-	      PhyAdd= SD_Base + resp2;
+	      	  read_data = read_uint64("out_data");
+	      	  r0 = read_data;
+	          PhyAdd= SD_Base + resp2;
               SendRequestToSDHC();
               read_data = read_uint64("out_data");
               r2 = read_data;
-	      PhyAdd= SD_Base + resp4;
+	          PhyAdd= SD_Base + resp4;
               SendRequestToSDHC();
               read_data = read_uint64("out_data");
               r4 = read_data;
-	      PhyAdd= SD_Base + resp6;
+	          PhyAdd= SD_Base + resp6;
               SendRequestToSDHC();
               read_data = read_uint64("out_data");
               r6 = read_data;
