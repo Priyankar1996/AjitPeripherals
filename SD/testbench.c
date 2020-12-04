@@ -95,7 +95,11 @@ void SendCMD(int n)
 		case 6:	data=0x80000000;
                         break;
 
+<<<<<<< HEAD
 		case 7: data=RCA;//[31:16]RCA
+=======
+		case 7: data=;//[31:16]RCA
+>>>>>>> a8361a1d359022b7599cec93d7ccbbf9ebb128c5
                         break;
 		
 		case 11:data=0;
@@ -162,7 +166,11 @@ int GenerateCMD(int n)
 		n=41;
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
 	}
+<<<<<<< HEAD
 	else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24))//R1,R7
+=======
+	else if( (n == 55)||(n == 3)||(n==8))//R1,R7
+>>>>>>> a8361a1d359022b7599cec93d7ccbbf9ebb128c5
 	{
 		if((n==17)||(n==24))
 			cmd = (n<<8)|(0<<6)|(1<<5)|(1<<4)|(1<<3)|(0<<2)|2;
