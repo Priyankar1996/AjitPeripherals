@@ -95,7 +95,7 @@ void SendCMD(int n)
 		case 6:	data=0x80000000;
                         break;
 
-		case 7: data=;//[31:16]RCA
+		case 7: data=RCA;//[31:16]RCA
                         break;
 		
 		case 11:data=0;
@@ -111,9 +111,6 @@ void SendCMD(int n)
 				//SDHC and SDXC use block unit address(512 bytes unit)
 				//read
                 break;
-			
-		case 19:data=0;
-		        break;
 
 		case 24:data=writed;//data address
 				//write
