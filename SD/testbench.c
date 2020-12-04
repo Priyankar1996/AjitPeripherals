@@ -96,7 +96,7 @@ void SendCMD(int n)
 		case 6:	data=0x80000000;
                         break;
 
-		case 7: data=0;//[31:16]RCA
+		case 7: data=;//[31:16]RCA
                         break;
 		
 		case 11:data=0;
@@ -150,7 +150,7 @@ void SendACMD(int n)
 int GenerateCMD(int n)
 {
 	int cmd;
-	if( n== (0||2||9||10))//R2
+	if( (n == 0)||(n==2)||(n==9)||(n==10))//R2
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
 		/*(13:08)Index 
@@ -161,12 +161,12 @@ int GenerateCMD(int n)
 		  (1:0) Response type*/
 
 	}
-	else if (n == 411 || 412) //R3
+	else if ((n == 411) || (n == 412)) //R3
 	{
 		n=41;
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
 	}
-	else if( n== (55||3||8))//R1,R7
+	else if( (n == 55)||(n == 3)||(n==8))//R1,R7
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
 	}
@@ -286,7 +286,7 @@ int Initialization()
 		busy = Resp >> 31;
 	}
         SendCMD(2);
-	GetBigResponse();//CID
+	GetBigResponse();//CID --not printed as of now
         SendCMD(3);
 	Resp = GetResponseFromSDHC();
 	RCA = Resp & 0x11110000;
