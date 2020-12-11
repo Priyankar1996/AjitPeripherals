@@ -561,7 +561,7 @@ int main(int argc, char *argv[])
 		
 		for(i=0;i<1024;i++)
 		{
-			read_data=BlockRead();
+			read_data=BlockRead(512,65535);
 			if(read_data!=i)
 			{
 				fprintf(stderr,"Data %d does not match with expected %d",read_data,i);
