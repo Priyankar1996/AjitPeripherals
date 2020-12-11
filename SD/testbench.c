@@ -124,7 +124,7 @@ void SendCMD(int n)
 				//read
                 break;
 
-		case 24:data=writed;//data address
+		case 24:data=addressd;//data address
 				//write
                 break;
 
@@ -174,9 +174,9 @@ int GenerateCMD(int n)
 		n=41;
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
 	}
-	else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24))//R1,R7
+	else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24)||(n==25))//R1,R7
 	{
-		if((n==17)||(n==24))
+		if((n==17)||(n==24)||(n==25))
 			cmd = (n<<8)|(0<<6)|(1<<5)|(1<<4)|(1<<3)|(0<<2)|2;
 		else
 			cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
@@ -209,9 +209,7 @@ int GenerateTran(int n)
 		tran = 16;
 	else 
 		tran =0;
-	return tran;	
-
-
+	return (tran & 0x0000ffff);	
 
 
 }
@@ -420,16 +418,35 @@ int UHSInitialization()
 }
 //int writed;
 //int addressd;
-int Blockwrite(int x, int y)
+int Blockwrite(int bsize, int bcount)
 {
 	int flag = 0;
 	int Resp;
-	writed = x;
-	addressd=y;
+	//writed = x;
+	addressd= 0;
 	SendCMD(19);
 	Resp = GetResponseFromSDHC();
-	SendCMD(24);
+	//Set Block Size 
+	PhyAdd = SD_Base + blocksize;
+        bytemask = 3;
+        data = bsize ;
+        SendRequestToSDHC();
+	//Set Block Count
+	PhyAdd = SD_Base + blockcount;
+        bytemask = 3;
+        data = bcount;
+        SendRequestToSDHC();
+	if (bcount ==1)
+	{
+		SendCMD(24);
+	}
+	else
+	{
+		SendCMD(25);
+	}
 	Resp = GetResponseFromSDHC();
+	//Wait for Buffer Write Ready Interrupt
+	
 	SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag ;
@@ -489,15 +506,15 @@ int main(int argc, char *argv[])
 		}
 		else
 			fprintf(stderr,"Succesfully Initialized");
-		for(i=0; i<1024; i++)
-		{
-			err = Blockwrite(i,i);
+		
+		//Blockwrite with 512 bytes block size and 2^31 block count 
+			err = Blockwrite(512,65535);
 			if(err)
 	                {
                 	        fprintf(stderr,"Error in BlockWrite");
                         	break;
         	        }
-		}
+		
 		for(i=0;i<1024;i++)
 		{
 			read_data=BlockRead();
