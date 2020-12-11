@@ -465,15 +465,46 @@ int Blockwrite(int bsize, int bcount)
 	return flag ;
 }
 
-int BlockRead()
+int BlockRead(int bsize, int bcount)
 {
 	int flag =0;
 	int Resp;
 	SendCMD(19);
 	Resp = GetResponseFromSDHC();
-        SendCMD(17);
+	//Set Block Size 
+	PhyAdd = SD_Base + blocksize;
+        bytemask = 3;
+        data = bsize ;
+        SendRequestToSDHC();
+	//Set Block Count
+	PhyAdd = SD_Base + blockcount;
+        bytemask = 3;
+        data = bcount;
+        SendRequestToSDHC();
+	if (bcount ==1)
+	{
+		SendCMD(17);
+	}
+	else
+	{
+		SendCMD(18);
+	}
 	Resp = GetResponseFromSDHC();
-        SendCMD(15);
+	//Wait for Buffer Read Ready Interrupt
+	/*while(bcount!=0)
+	{
+		if(!buffer_read_ready_interrrupt)
+		{
+			bcount=bcount;
+		}
+		else
+		{
+			buffer_read_ready_interrupt=0;
+			bcount--;
+			//READ_DATA
+		}
+	}*/
+    SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag;
 }
