@@ -446,7 +446,20 @@ int Blockwrite(int bsize, int bcount)
 	}
 	Resp = GetResponseFromSDHC();
 	//Wait for Buffer Write Ready Interrupt
-	
+	/*while(bcount!=0)
+	{
+		if(!buffer_write_ready_interrrupt)
+		{
+			bcount=bcount;
+		}
+		else
+		{
+			buffer_write_ready_interrupt=0;
+			bcount--;
+			//DATA WRITE
+		}
+
+	}*/
 	SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag ;
