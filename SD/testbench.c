@@ -279,6 +279,38 @@ void GetBigResponse()
 //DEFINE_THREAD(GetResponseFromSDHC);
 
 
+int tuning()
+{
+	int Resp=0,count=40,execute_tuning,sampling_clock_select;
+	PhyAdd = SD_Base + hostcontrol2;
+	bytemask = 3;
+	data  = 0x40;
+	rw=0;
+	uint64_t read_tuning_data;
+	SendRequestToSDHC();
+	while(count!=0)
+	{	
+		//Send CMD19
+		SendCMD(19);
+		Resp= GetResponseFromSDHC();
+		//Check for Buffer Read Ready
+		//Clear Buffer Read Ready
+		//Set execute tuning.
+		rw=1;
+		read_tuning_data=read_uint64("out_data");
+		execute_tuning= (read_tuning_data & 0x40)>>6;
+		if(execute_tuning==0)
+			break;
+		else
+			count--;
+	}
+	sampling_clock_select= (read_tuning_data & 0x80)>>7;
+	if(sampling_clock_select==1)
+		return 0;
+	else
+		return 1;
+}
+
 int Initialization()
 {
 	int Resp=0,busy=0;
@@ -424,8 +456,7 @@ int Blockwrite(int bsize, int bcount)
 	int Resp;
 	//writed = x;
 	addressd= 0;
-	SendCMD(19);
-	Resp = GetResponseFromSDHC();
+	flag = tuning();
 	//Set Block Size 
 	PhyAdd = SD_Base + blocksize;
         bytemask = 3;
