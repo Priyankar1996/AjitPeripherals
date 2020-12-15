@@ -277,11 +277,91 @@ void GetBigResponse()
 }
 
 //DEFINE_THREAD(GetResponseFromSDHC);
+int normalinterrupt()
+{
+        uint8_t intr =0;
+        int interrupt;
+        intr = read_uint8("nintrrupt");
 
+        interrupt = (intr & 0x1);
+
+        return interrupt;
+}
+DEFINE_THREAD(normalinterrupt);
+
+int errorinterrupt()
+{
+        uint8_t intr =0;
+        int interrupt;
+        intr = read_uint8("eintrrupt");
+
+        interrupt = (intr & 0x1);
+        return interrupt;
+}
+DEFINE_THREAD(errorinterrupt);
+
+int generate_interrupt(int data)
+{
+	int status_intr,flag;
+	uint64_t status;
+	PhyAdd = SD_Base + nintrstatusen ;
+	bytemask = 3;
+	rw = 0;
+	data = data;
+	SendRequestToSDHC();
+	PhyAdd = SD_Base + nintrsignalen ;
+        bytemask = 3;
+        rw = 0;
+        data = data;
+        SendRequestToSDHC();
+	
+	PhyAdd = SD_Base + nintrstatus ;
+        bytemask = 3;
+        rw = 1;
+        
+	status = read_uint64("out_data");
+	
+	int count =0;
+	int temp_data = data;
+	while ()
+	{
+	 	if( (temp_data >>1) != 1)
+		{
+			count ++;
+		}
+		else
+			break;
+	}
+
+	status_intr = (status & data) >> count;
+
+	while(){
+	flag = normalinterrupt();
+
+		if ( flag ==  1)
+		{
+			break;	
+		}
+
+	}
+	return flag;
+}
+
+void interrupt_clear(int d)
+{
+	int flag =0;
+	PhyAdd = SD_Base + nintrstatus ;
+        bytemask = 3;
+        rw = 0;
+        data = data;
+        SendRequestToSDHC();
+	
+
+}
 
 int tuning()
 {
-	int Resp=0,count=40,execute_tuning,sampling_clock_select;
+	int Resp=0,count=40,execute_tuning,sampling_clock_select, buffer_read_ready;
 	PhyAdd = SD_Base + hostcontrol2;
 	bytemask = 3;
 	data  = 0x40;
@@ -294,8 +374,10 @@ int tuning()
 		SendCMD(19);
 		Resp= GetResponseFromSDHC();
 		//Check for Buffer Read Ready
+		buffer_read_ready = generate_interrupt(0x20);
 		//Clear Buffer Read Ready
-		//Set execute tuning.
+		interrupt_clear(0x20);
+		//execute tuning read
 		rw=1;
 		read_tuning_data=read_uint64("out_data");
 		execute_tuning= (read_tuning_data & 0x40)>>6;
@@ -500,8 +582,9 @@ int BlockRead(int bsize, int bcount)
 {
 	int flag =0;
 	int Resp;
-	SendCMD(19);
-	Resp = GetResponseFromSDHC();
+	//SendCMD(19);
+	flag = tuning ();
+	//Resp = GetResponseFromSDHC();
 	//Set Block Size 
 	PhyAdd = SD_Base + blocksize;
         bytemask = 3;
@@ -535,7 +618,7 @@ int BlockRead(int bsize, int bcount)
 			//READ_DATA
 		}
 	}*/
-    SendCMD(15);
+        SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag;
 }
