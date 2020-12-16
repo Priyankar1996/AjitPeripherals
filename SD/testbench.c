@@ -131,7 +131,7 @@ int generate_interrupt(int data)
 
         int count =0;
         int temp_data = data;
-        while ()
+        while(1)
         {
                 if( (temp_data >>1) != 1)
                 {
@@ -146,7 +146,7 @@ int generate_interrupt(int data)
         fprintf(stderr,"Interrupt status is %d",status_intr);
 
         //checking for interrupt
-        while(){
+        while(1){
         flag = normalinterrupt();
 
                 if ( flag ==  1)
