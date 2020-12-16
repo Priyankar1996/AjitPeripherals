@@ -54,6 +54,8 @@ int RCA = 0;
 int writed;
 int addressd;
 
+
+
 void SendRequestToSDHC()
 {
 	/*Bit 73: lock bit
@@ -70,24 +72,154 @@ void SendRequestToSDHC()
 	write_uint64 ("in_data_0",write_data0);
 	write_uint16 ("in_data_1",write_data1);
 }
-void casefunc(int dat, int n)
-{
 
-			PhyAdd =SD_Base+argument;
-                        data = dat;
-                        SendRequestToSDHC();
-                        PhyAdd = SD_Base + transfer;
-			bytemask = 3;
-                        data = GenerateTran(n);
-                        SendRequestToSDHC();
-			PhyAdd = SD_Base + command;
-			bytemask = 3;
-                        data = GenerateCMD(n);
-                        SendRequestToSDHC();
+int normalinterrupt()
+{
+        uint8_t intr =0;
+        int interrupt;
+        intr = read_uint8("nintrrupt");
+
+        interrupt = (intr & 0x1);
+
+        return interrupt;
+}
+DEFINE_THREAD(normalinterrupt);
+
+int errorinterrupt()
+{
+        uint8_t intr =0;
+        int interrupt;
+        intr = read_uint8("eintrrupt");
+
+        interrupt = (intr & 0x1);
+        return interrupt;
+}
+DEFINE_THREAD(errorinterrupt);
+
+void interrupt_clear(int d)
+{
+        int flag =0;
+        PhyAdd = SD_Base + nintrstatus ;
+        bytemask = 3;
+        rw = 0;
+        data = data;
+        SendRequestToSDHC();
+
 
 }
+
+int generate_interrupt(int data)
+{
+        int status_intr,flag;
+        uint64_t status;
+        PhyAdd = SD_Base + nintrstatusen ;
+        bytemask = 3;
+        rw = 0;
+        data = data;
+        SendRequestToSDHC();
+        PhyAdd = SD_Base + nintrsignalen ;
+        bytemask = 3;
+        rw = 0;
+        data = data;
+        SendRequestToSDHC();
+
+        PhyAdd = SD_Base + nintrstatus ;
+        bytemask = 3;
+        rw = 1;
+
+        status = read_uint64("out_data");
+
+        int count =0;
+        int temp_data = data;
+        while ()
+        {
+                if( (temp_data >>1) != 1)
+                {
+                        count ++;
+                }
+		 else
+                        break;
+        }
+
+        status_intr = (status & data) >> count;
+
+        fprintf(stderr,"Interrupt status is %d",status_intr);
+
+        //checking for interrupt
+        while(){
+        flag = normalinterrupt();
+
+                if ( flag ==  1)
+                {
+                        break;
+                }
+
+        }
+        return flag;
+}
+
+
+
+
+
+
+void casefunc(int dat, int n)
+{
+			int flag=0;
+			PhyAdd =SD_Base+argument;
+                        data = dat;
+			bytemask = 0;
+			rw = 0;
+                        SendRequestToSDHC();
+			if ( (n == 17) || (n ==18) || (n==24) || (n==25))
+			{
+                        	PhyAdd = SD_Base + transfer;
+				bytemask = 3;
+				rw = 0;
+                        	data = GenerateTran(n);
+                        	SendRequestToSDHC();
+			}
+			PhyAdd = SD_Base + command;
+			bytemask = 3;
+			rw = 0;
+                        data = GenerateCMD(n);
+                        SendRequestToSDHC();
+			flag = generate_interrupt ( 0x1);			
+			interrupt_clear(0x01);
+
+}
+int ReceiveFromSDHC(int address, int bytemask_data)
+{
+	uint64_t read_data;
+        int resp;
+        rw = 1 ;
+        PhyAdd= SD_Base + address;
+    
+	bytemask = bytemask_data ;
+        SendRequestToSDHC();
+
+        read_data = read_uint64("out_data");
+        resp = read_data;
+        return resp;
+	
+}
+
 void SendCMD(int n)
 {
+
+	//Check Command Inhibit(CMD)
+	int present_state;
+	present_state = ReceiveFromSDHC( present, 0);
+	while( (present_state & 0x1) == 1)//command_inhibit(CMD)
+	{
+		present_state = ReceiveFromSDHC( present, 0);
+	}
+
+	while( (present_state & 0x2) == 1)//command_inhibit(DAT)
+        {
+                present_state = ReceiveFromSDHC( present, 0);
+        }
+
 	switch(n)
 	{
 		case 0: data = 0;
@@ -106,12 +238,12 @@ void SendCMD(int n)
 		case 7: data= RCA ;//[31:16]RCA
                         break;
 
-		//case 7: data=RCA;//[31:16]RCA
-                //break;
-
 		
 		case 11:data=0;
 			break;
+
+		case 18: data = addressd;
+			 break;
 
 		case 19:data=0;
 			break;
@@ -119,14 +251,17 @@ void SendCMD(int n)
 		case 15:data= RCA;//[31:16]RCA
                         break;
 
-		case 17:data=0;//data address SDSC cards use byte unit address
+		case 17:data=addressd;//data address SDSC cards use byte unit address
 				//SDHC and SDXC use block unit address(512 bytes unit)
 				//read
-                break;
+                	break;
 
 		case 24:data=addressd;//data address
 				//write
-                break;
+                	break;
+
+		case 25: data = addressd;
+			 break;
 
 		case 8: data = 0x1AA;
                 break;
@@ -273,95 +408,10 @@ void GetBigResponse()
               SendRequestToSDHC();
               read_data = read_uint64("out_data");
               r6 = read_data;
-	
 }
-
-//DEFINE_THREAD(GetResponseFromSDHC);
-int normalinterrupt()
-{
-        uint8_t intr =0;
-        int interrupt;
-        intr = read_uint8("nintrrupt");
-
-        interrupt = (intr & 0x1);
-
-        return interrupt;
-}
-DEFINE_THREAD(normalinterrupt);
-
-int errorinterrupt()
-{
-        uint8_t intr =0;
-        int interrupt;
-        intr = read_uint8("eintrrupt");
-
-        interrupt = (intr & 0x1);
-        return interrupt;
-}
-DEFINE_THREAD(errorinterrupt);
-
-int generate_interrupt(int data)
-{
-	int status_intr,flag;
-	uint64_t status;
-	PhyAdd = SD_Base + nintrstatusen ;
-	bytemask = 3;
-	rw = 0;
-	data = data;
-	SendRequestToSDHC();
-	PhyAdd = SD_Base + nintrsignalen ;
-        bytemask = 3;
-        rw = 0;
-        data = data;
-        SendRequestToSDHC();
-	
-	PhyAdd = SD_Base + nintrstatus ;
-        bytemask = 3;
-        rw = 1;
-        
-	status = read_uint64("out_data");
-	
-	int count =0;
-	int temp_data = data;
-	while ()
-	{
-	 	if( (temp_data >>1) != 1)
-		{
-			count ++;
-		}
-		else
-			break;
-	}
-
-	status_intr = (status & data) >> count;
-
-	while(){
-	flag = normalinterrupt();
-
-		if ( flag ==  1)
-		{
-			break;	
-		}
-
-	}
-	return flag;
-}
-
-void interrupt_clear(int d)
-{
-	int flag =0;
-	PhyAdd = SD_Base + nintrstatus ;
-        bytemask = 3;
-        rw = 0;
-        data = data;
-        SendRequestToSDHC();
-	
-
-}
-
 int tuning()
 {
-	int Resp=0,count=40,execute_tuning,sampling_clock_select, buffer_read_ready;
+	int Resp=0,count=40,execute_tuning,sampling_clock_select, buffer_read_ready=0;
 	PhyAdd = SD_Base + hostcontrol2;
 	bytemask = 3;
 	data  = 0x40;
@@ -374,13 +424,17 @@ int tuning()
 		SendCMD(19);
 		Resp= GetResponseFromSDHC();
 		//Check for Buffer Read Ready
+		while( buffer_read_ready == 0){
 		buffer_read_ready = generate_interrupt(0x20);
+		}
 		//Clear Buffer Read Ready
 		interrupt_clear(0x20);
 		//execute tuning read
-		rw=1;
+		PhyAdd = SD_Base + hostcontrol2;
+	        bytemask = 3;
+       		rw=1;
 		read_tuning_data=read_uint64("out_data");
-		execute_tuning= (read_tuning_data & 0x40)>>6;
+		execute_tuning = (read_tuning_data & 0x40)>>6;
 		if(execute_tuning==0)
 			break;
 		else
