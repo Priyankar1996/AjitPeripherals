@@ -613,18 +613,18 @@ int Blockwrite(int bsize, int bcount)
 	}
 	Resp = GetResponseFromSDHC();
 	//Wait for Buffer Write Ready Interrupt
-	int buffer_write_ready_interrupt=generate_interrupt();
+	int buffer_write_ready_interrupt=generate_interrupt(0x10);
 	while(bcount!=0)
 	{
-		if(!buffer_write_ready_interrrupt)
+		if(buffer_write_ready_interrupt==0)
 		{
 			bcount=bcount;
 		}
 		else
 		{
-			fprintf(stderr,"Buffer Write Ready Interrupt occured");
-			buffer_write_ready_interrupt=0;
-			fprintf(stderr,"Buffer Write Ready Interrupt cleared");
+			fprintf(stderr,"Buffer Write Ready Interrupt occured,ready to write buffer");
+			interrupt_clear(0x10);
+			fprintf(stderr,"Buffer Write Ready Interrupt cleared,wait for interrupt to occur");
 			bcount--;
 		}
 	}
@@ -659,20 +659,22 @@ int BlockRead(int bsize, int bcount)
 		SendCMD(18);
 	}
 	Resp = GetResponseFromSDHC();
+	int buffer_read_ready_interrupt=generate_interrupt(0x20);
 	//Wait for Buffer Read Ready Interrupt
-	/*while(bcount!=0)
+	while(bcount!=0)
 	{
-		if(!buffer_read_ready_interrrupt)
+		if(buffer_read_ready_interrupt==0)
 		{
 			bcount=bcount;
 		}
 		else
 		{
-			buffer_read_ready_interrupt=0;
+			fprintf(stderr,"Buffer Read Ready Interrupt occured,ready to write buffer");
+			interrupt_clear(0x20);
+			fprintf(stderr,"Buffer Read Ready Interrupt cleared,wait for interrupt to occur");
 			bcount--;
-			//READ_DATA
 		}
-	}*/
+	}
         SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag;
@@ -721,12 +723,12 @@ int main(int argc, char *argv[])
 			fprintf(stderr,"Succesfully Initialized");
 		
 		//Blockwrite with 512 bytes block size and 2^31 block count 
-			err = Blockwrite(512,65535);
-			if(err)
-	                {
-                	        fprintf(stderr,"Error in BlockWrite");
-                        	break;
-        	        }
+		err = Blockwrite(512,65535);
+		if(err)
+	    {
+            fprintf(stderr,"Error in BlockWrite");
+            break;
+        }
 		
 		for(i=0;i<1024;i++)
 		{
