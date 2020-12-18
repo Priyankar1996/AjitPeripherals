@@ -8,6 +8,13 @@
 #include <pipeHandler.h>
 #include <stdbool.h>
 
+//#ifndef AA2C
+ //       #include "vhdlCStubs.h"
+//#else
+//        #include "aa_c_model.h"
+//#endif
+
+
 //typedef bool uint1_t;
 //registers
 
@@ -588,7 +595,7 @@ int UHSInitialization()
 //int addressd;
 int Blockwrite(int bsize, int bcount)
 {
-	int flag = 0;
+	int flag = 0,i;
 	int Resp;
 	//writed = x;
 	addressd= 0;
@@ -596,11 +603,13 @@ int Blockwrite(int bsize, int bcount)
 	//Set Block Size 
 	PhyAdd = SD_Base + blocksize;
         bytemask = 3;
+	rw =0;
         data = bsize ;
         SendRequestToSDHC();
 	//Set Block Count
 	PhyAdd = SD_Base + blockcount;
         bytemask = 3;
+	rw =0;
         data = bcount;
         SendRequestToSDHC();
 	if (bcount ==1)
@@ -613,21 +622,28 @@ int Blockwrite(int bsize, int bcount)
 	}
 	Resp = GetResponseFromSDHC();
 	//Wait for Buffer Write Ready Interrupt
-	int buffer_write_ready_interrupt=generate_interrupt(0x10);
+	int buffer_write_ready_interrupt;
 	while(bcount!=0)
 	{
-		if(buffer_write_ready_interrupt==0)
-		{
-			bcount=bcount;
-		}
-		else
-		{
+			buffer_write_ready_interrupt=generate_interrupt(0x10);		
 			fprintf(stderr,"Buffer Write Ready Interrupt occured,ready to write buffer");
 			interrupt_clear(0x10);
 			fprintf(stderr,"Buffer Write Ready Interrupt cleared,wait for interrupt to occur");
+			//Set block data
+			
+			PhyAdd = SD_Base + bufferdata;
+			bytemask = 0;
+			rw = 0;
+			for(i=0; i<128 ; i++)
+			{
+				data = i;
+				SendRequestToSDHC();
+			}
 			bcount--;
-		}
+	
 	}
+	int transfer_complete = generate_interrupt(0x2);
+	interrupt_clear(0x2);
 	SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag ;
@@ -635,8 +651,9 @@ int Blockwrite(int bsize, int bcount)
 
 int BlockRead(int bsize, int bcount)
 {
-	int flag =0;
+	int flag =0,i;
 	int Resp;
+	int block_data;
 	//SendCMD(19);
 	flag = tuning ();
 	//Resp = GetResponseFromSDHC();
@@ -659,22 +676,30 @@ int BlockRead(int bsize, int bcount)
 		SendCMD(18);
 	}
 	Resp = GetResponseFromSDHC();
-	int buffer_read_ready_interrupt=generate_interrupt(0x20);
+	int buffer_read_ready_interrupt;
 	//Wait for Buffer Read Ready Interrupt
 	while(bcount!=0)
 	{
-		if(buffer_read_ready_interrupt==0)
-		{
-			bcount=bcount;
-		}
-		else
-		{
+
+			buffer_read_ready_interrupt=generate_interrupt(0x20);
 			fprintf(stderr,"Buffer Read Ready Interrupt occured,ready to write buffer");
 			interrupt_clear(0x20);
 			fprintf(stderr,"Buffer Read Ready Interrupt cleared,wait for interrupt to occur");
+			//Get Block Data
+			for(i=0; i< 128; i++)
+			{
+				block_data = ReceiveFromSDHC(bufferdata,0);
+				fprintf(stderr," Blockdata[%d] %d", i, block_data);
+				if(block_data != i){
+					fprintf(stderr,"Error ..Expected = %d , Actual =%d ", i, block_data);
+					flag =1;
+				}
+			}
 			bcount--;
-		}
+		
 	}
+	int transfer_complete = generate_interrupt(0x2);
+        interrupt_clear(0x2);
         SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag;
@@ -707,10 +732,36 @@ int main(int argc, char *argv[])
 	{
 		if (argc <2)
 		{
-			fprintf(stderr," 0 for Initialization\n 1 for UHSInitialization\n");
+			fprintf(stderr," \n null for no-trace, stdout for stdout \n0 for Initialization 1 for UHSInitialization\n");
 			return(1);
 		}
-		if ( atoi(argv[1]) ==0)
+		FILE* fp = NULL;
+	        if(strcmp(argv[1],"stdout") == 0)
+       		{
+                	fp = stdout;
+        	}
+        	else if(strcmp(argv[1], "null") != 0)
+        	{
+                	fp = fopen(argv[1],"w");
+                	if(fp == NULL)
+                	{
+                        	fprintf(stderr,"Error: could not open trace file %s\n", argv[1]);
+                        	return(1);
+                	}
+        	}
+//#ifdef AA2C
+//        init_pipe_handler();
+//        start_daemons (fp,0);
+//#endif
+		PTHREAD_DECL(normalinterrupt);
+	        PTHREAD_CREATE(normalinterrupt);
+
+        	PTHREAD_DECL(errorinterrupt);
+        	PTHREAD_CREATE(errorinterrupt);
+
+
+
+		if ( atoi(argv[2]) ==0)
 			err=Initialization();
 		else
 		    err =UHSInitialization();
@@ -725,20 +776,18 @@ int main(int argc, char *argv[])
 		//Blockwrite with 512 bytes block size and 2^31 block count 
 		err = Blockwrite(512,65535);
 		if(err)
-	    {
-            fprintf(stderr,"Error in BlockWrite");
-            break;
-        }
+	    	{
+            		fprintf(stderr,"Error in BlockWrite");
+            		break;
+        	}	
 		
-		for(i=0;i<1024;i++)
-		{
-			read_data=BlockRead(512,65535);
-			if(read_data!=i)
+	
+		err = BlockRead(512,65535);
+			if(err)
 			{
-				fprintf(stderr,"Data %d does not match with expected %d",read_data,i);
+				fprintf(stderr," Error in Block read");
 				break;
 			}
-		}
 	}
 
 	return 0;
