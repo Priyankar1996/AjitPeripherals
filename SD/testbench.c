@@ -749,7 +749,6 @@ int main(int argc, char *argv[])
 		if(err)
 		{
 			fprintf(stderr,"Error in Initialization");
-			break;
 		}
 		else
 			fprintf(stderr,"Succesfully Initialized");
@@ -759,7 +758,6 @@ int main(int argc, char *argv[])
 		if(err)
 	    	{
             		fprintf(stderr,"Error in BlockWrite");
-            		break;
         	}	
 		
 	
@@ -767,7 +765,6 @@ int main(int argc, char *argv[])
 			if(err)
 			{
 				fprintf(stderr," Error in Block read");
-				break;
 			}
 	
 
