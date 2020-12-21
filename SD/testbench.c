@@ -51,7 +51,7 @@
 
 #define SD_Base 0x00//SD base address
   
-long int lockbit=0;
+
 long int rw = 0;
 long int bytemask;
 long int PhyAdd;
@@ -65,19 +65,16 @@ int addressd;
 
 void SendRequestToSDHC()
 {
-	/*Bit 73: lock bit
-          Bit 72: read/write-bar
-          Bits 71-68: Byte-mask
-	  Bits 67-32: Physical address
+	/*Bit 63: rw
+          Bit 62-59: bytemask
+          Bits 58-56: Unused
+	  Bits 55-32: Physical address
           Bits 31- 0: Write-data*/
-	uint64_t write_data0;
-	uint16_t write_data1;
+	uint64_t write_data;
 	
-	write_data0 = (lockbit<<63)|(rw<<62)|(bytemask<<58)|(PhyAdd<<22)|(data>>10);
-	write_data1 = (data<<6);
+	write_data = (rw << 63) | (bytemask<<59) | (PhyAdd << 32) | data ;
 
-	write_uint64 ("in_data_0",write_data0);
-	write_uint16 ("in_data_1",write_data1);
+	write_uint64 ("peripheral_bridge_to_sdhc_request",write_data);
 }
 
 int normalinterrupt()
@@ -90,7 +87,6 @@ int normalinterrupt()
 
         return interrupt;
 }
-DEFINE_THREAD(normalinterrupt);
 
 int errorinterrupt()
 {
@@ -101,7 +97,6 @@ int errorinterrupt()
         interrupt = (intr & 0x1);
         return interrupt;
 }
-DEFINE_THREAD(errorinterrupt);
 
 void interrupt_clear(int d)
 {
@@ -118,7 +113,7 @@ void interrupt_clear(int d)
 int generate_interrupt(int data)
 {
         int status_intr,flag;
-        uint64_t status;
+        uint32_t status;
         PhyAdd = SD_Base + nintrstatusen ;
         bytemask = 3;
         rw = 0;
@@ -134,7 +129,7 @@ int generate_interrupt(int data)
         bytemask = 3;
         rw = 1;
 
-        status = read_uint64("out_data");
+        status = read_uint32("sdhc_to_peipheral_bridge_response");
 
         int count =0;
         int temp_data = data;
@@ -197,7 +192,7 @@ void casefunc(int dat, int n)
 }
 int ReceiveFromSDHC(int address, int bytemask_data)
 {
-	uint64_t read_data;
+	uint32_t read_data;
         int resp;
         rw = 1 ;
         PhyAdd= SD_Base + address;
@@ -205,7 +200,7 @@ int ReceiveFromSDHC(int address, int bytemask_data)
 	bytemask = bytemask_data ;
         SendRequestToSDHC();
 
-        read_data = read_uint64("out_data");
+        read_data = read_uint32("sdhc_to_peripheral_bridge_response");
         resp = read_data;
         return resp;
 	
@@ -359,61 +354,58 @@ int GenerateTran(int n)
 int checkDATline()
 {
 
-	uint64_t read_data;
+	uint32_t read_data;
        	int resp;
 	rw = 1;
 	PhyAdd = SD_Base + present ;
 	data = 0;
 	SendRequestToSDHC();
 	
-	read_data = read_uint64("out_data");
+	read_data = read_uint32("sdhc_to_peripheral_bridge_response");
 	resp = (read_data >> 20) & 0xf;
 	return resp;		
 }
 
 
-//DEFINE_THREAD(SendRequestToSDHC);
-
 int GetResponseFromSDHC()
 {
 	
-	//int response_pipe_read_data[read_data_length];
-	/*Bits 32: Error-bit
+	/*
 	  Bits 31-0: Read-Data*/
-	uint64_t read_data;
+	uint32_t read_data;
 	int resp;
 	rw=1;
 	PhyAdd= SD_Base + resp0;
 	data = 0;
 	SendRequestToSDHC();
 
-	read_data = read_uint64("out_data");
+	read_data = read_uint32("sdhc_to_peripheral_bridge_response");
 	resp = read_data;
 	return resp;
 
 }
 void GetBigResponse()
 {
-	uint64_t read_data;
+	uint32_t read_data;
 	int r0,r2,r4,r6;
 	rw = 1;
 	data = 0;
 	
               PhyAdd= SD_Base + resp0;
               SendRequestToSDHC();
-	      	  read_data = read_uint64("out_data");
+	      	  read_data = read_uint32("sdhc_to_peripheral_bridge_response");
 	      	  r0 = read_data;
 	          PhyAdd= SD_Base + resp2;
               SendRequestToSDHC();
-              read_data = read_uint64("out_data");
+              read_data = read_uint32("sdhc_to_peripheral_bridge_response");
               r2 = read_data;
 	          PhyAdd= SD_Base + resp4;
               SendRequestToSDHC();
-              read_data = read_uint64("out_data");
+              read_data = read_uint32("sdhc_to_peripheral_bridge_response");
               r4 = read_data;
 	          PhyAdd= SD_Base + resp6;
               SendRequestToSDHC();
-              read_data = read_uint64("out_data");
+              read_data = read_uint32("sdhc_to_peripheral_bridge_response");
               r6 = read_data;
 }
 int tuning()
@@ -423,7 +415,7 @@ int tuning()
 	bytemask = 3;
 	data  = 0x40;
 	rw=0;
-	uint64_t read_tuning_data;
+	uint32_t read_tuning_data;
 	SendRequestToSDHC();
 	while(count!=0)
 	{	
@@ -440,7 +432,7 @@ int tuning()
 		PhyAdd = SD_Base + hostcontrol2;
 	        bytemask = 3;
        		rw=1;
-		read_tuning_data=read_uint64("out_data");
+		read_tuning_data=read_uint32("sdhc_to_peripheral_bridge_response");
 		execute_tuning = (read_tuning_data & 0x40)>>6;
 		if(execute_tuning==0)
 			break;
@@ -654,9 +646,7 @@ int BlockRead(int bsize, int bcount)
 	int flag =0,i;
 	int Resp;
 	int block_data;
-	//SendCMD(19);
 	flag = tuning ();
-	//Resp = GetResponseFromSDHC();
 	//Set Block Size 
 	PhyAdd = SD_Base + blocksize;
         bytemask = 3;
@@ -722,14 +712,9 @@ int main(int argc, char *argv[])
 		// CMD2 Command
 		// CMD3 Arguement
 		// CMD3 Command	
-	//Test single block write-T2
-	//Test single block read-T3
-	//Test multiple block write-T4
-	//Test multiple block read-T5
 	int err,i;
 	int read_data;
-	while(1)
-	{
+	
 		if (argc <2)
 		{
 			fprintf(stderr," \n null for no-trace, stdout for stdout \n0 for Initialization 1 for UHSInitialization\n");
@@ -753,11 +738,7 @@ int main(int argc, char *argv[])
 //        init_pipe_handler();
 //        start_daemons (fp,0);
 //#endif
-		PTHREAD_DECL(normalinterrupt);
-	        PTHREAD_CREATE(normalinterrupt);
-
-        	PTHREAD_DECL(errorinterrupt);
-        	PTHREAD_CREATE(errorinterrupt);
+	
 
 
 
@@ -788,7 +769,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr," Error in Block read");
 				break;
 			}
-	}
+	
 
 	return 0;
 }
