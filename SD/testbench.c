@@ -468,6 +468,7 @@ int Initialization()
 	SendACMD(411);//inquiry ACMD41
 	Resp = GetResponseFromSDHC();//Contains OCR.
 	OCR = (Resp & 0x00111100);
+	fprintf(stderr," OCR = %d", OCR); 
 
 	while(!busy)
 	{
@@ -494,6 +495,25 @@ int Initialization()
 	Resp = GetResponseFromSDHC();
 	RCA = Resp & 0x11110000;
 	return flag;
+	SendCMD(7);
+        Resp = GetResponseFromSDHC();
+        a = checkDATline();
+        while(a!=0)
+        {
+                a = checkDATline();//check until busy bit is present in data line.
+        }
+        //Check CARD_IS_LOCKED bit in Response
+        Card_Is_Locked = (Resp & 0x02000000)>>25;
+        if(Card_Is_Locked)
+        {
+                SendCMD(42);
+                Resp = GetResponseFromSDHC();
+        }
+        SendCMD(55);
+        Resp = GetResponseFromSDHC();
+        SendACMD(6);
+        Resp = GetResponseFromSDHC();
+
 
 }
 
@@ -575,13 +595,15 @@ int UHSInitialization()
 	Resp = GetResponseFromSDHC();
 	SendCMD(6);//set-mode cmd(6)
 	Resp = GetResponseFromSDHC();
-	int count=40;
-	while(count!=0)
-	{
-		SendCMD(19);// to be used only if SDR50 and SDR104 mode is used.
-		Resp = GetResponseFromSDHC();
-		count--;
-	}
+	flag = tuning ();
+	return flag;
+	//int count=40;
+	//while(count!=0)
+	//{
+	//	SendCMD(19);// to be used only if SDR50 and SDR104 mode is used.
+	//	Resp = GetResponseFromSDHC();
+	//	count--;
+	//}
 }
 //int writed;
 //int addressd;
@@ -591,7 +613,6 @@ int Blockwrite(int bsize, int bcount)
 	int Resp;
 	//writed = x;
 	addressd= 0;
-	flag = tuning();
 	//Set Block Size 
 	PhyAdd = SD_Base + blocksize;
         bytemask = 3;
@@ -646,7 +667,6 @@ int BlockRead(int bsize, int bcount)
 	int flag =0,i;
 	int Resp;
 	int block_data;
-	flag = tuning ();
 	//Set Block Size 
 	PhyAdd = SD_Base + blocksize;
         bytemask = 3;
