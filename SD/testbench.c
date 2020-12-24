@@ -31,10 +31,10 @@
 #define present 0x24
 #define hostcontrol 0x28
 #define powercontrol 0x29
-#define blockgapcontrol 0x2A
-#define wakeupcontrol 0x2B
+//#define blockgapcontrol 0x2A
+//#define wakeupcontrol 0x2B
 #define clockcontrol 0x2C
-#define timeoutcontrol 0x2E
+//#define timeoutcontrol 0x2E
 #define swreset 0x2F
 #define nintrstatus 0x30
 #define eintrstatus 0x32
@@ -45,8 +45,8 @@
 #define autocmderror 0x3C
 #define hostcontrol2 0x3E
 #define capa 0x40
-#define maxIcap 0x48
-#define HCversion 0xFE
+//#define maxIcap 0x48
+//#define HCversion 0xFE
 
 
 #define SD_Base 0x00//SD base address
@@ -100,16 +100,51 @@ int errorinterrupt()
 
 void interrupt_clear(int d)
 {
-        int flag =0;
         PhyAdd = SD_Base + nintrstatus ;
         bytemask = 3;
         rw = 0;
         data = data;
         SendRequestToSDHC();
 
-
 }
+void clear_error_interrupt()
+{
+	PhyAdd = SD_Base + eintrstatus ;
+        bytemask = 3;
+        rw = 0;
+        data = 0xffff;
+        SendRequestToSDHC();
+}
+int generate_error_interrupt()
+{
+	int status_intr,flag;
+        uint32_t status;
+        PhyAdd = SD_Base + eintrstatusen ;
+        bytemask = 3;
+        rw = 0;
+        data = 0xffff;
+        SendRequestToSDHC();
+        PhyAdd = SD_Base + eintrsignalen ;
+        bytemask = 3;
+        rw = 0;
+        data = 0xffff;
+        SendRequestToSDHC();
 
+        PhyAdd = SD_Base + eintrstatus ;
+        bytemask = 3;
+        rw = 1;
+
+        status = read_uint32("sdhc_to_peipheral_bridge_response");
+	int error_intr =status;
+        fprintf(stderr,"Interrupt status is %d",error_intr);
+
+        //checking for interrupt
+        
+        flag = errorinterrupt();
+	if (flag == 1)
+		clear_error_interrupt();
+        return flag;
+}
 int generate_interrupt(int data)
 {
         int status_intr,flag;
@@ -186,8 +221,17 @@ void casefunc(int dat, int n)
 			rw = 0;
                         data = GenerateCMD(n);
                         SendRequestToSDHC();
-			flag = generate_interrupt ( 0x1);			
-			interrupt_clear(0x01);
+			flag = generate_error_interrupt();
+			if(flag == 1)
+			{
+				fprintf(stderr,"Error occurred");
+			}
+			else
+			{
+				flag = generate_interrupt ( 0x1);			
+				interrupt_clear(0x01);
+			}
+
 
 }
 int ReceiveFromSDHC(int address, int bytemask_data)
@@ -282,6 +326,8 @@ void SendACMD(int n)
 	{
 		case 6: data =0x2;
 			    break;
+		case 23: data = 65535;
+			 break;
 		case 411:data = 0;
                  break;
 		case 412:data = OCR;
@@ -687,6 +733,10 @@ int Blockwrite(int bsize, int bcount)
 	}
 	else
 	{
+		//Pre-erased
+		SendCMD(55);
+		Resp = GetResponseFromSDHC();
+		SendACMD(23);
 		SendCMD(25);
 	}
 	Resp = GetResponseFromSDHC();
@@ -778,6 +828,7 @@ int main(int argc, char *argv[])
 	int err,i,flag=0;
 	int read_data;
 	int sdclk_freq;
+	int voltage_support;
 	
 		if (argc <2)
 		{
@@ -829,7 +880,8 @@ int main(int argc, char *argv[])
 
 		fprintf(stderr," Base Clock Frequency For SD Clock is %d ",(read_data>>8));
 	       	
-		
+		voltage_support = (read_data>>24) & 0x7;//supported voltages
+
 		if ( atoi(argv[2]) ==0)
 		{
 			sdclk_freq = (read_data>>8) / 50;
@@ -852,7 +904,18 @@ int main(int argc, char *argv[])
                         bytemask = 3;
                         data = 4;
                         SendRequestToSDHC();
-			
+			//SD bus Power control
+			PhyAdd = SD_Base + powercontrol;
+	                rw = 0;
+        	        bytemask = 1;
+			if((voltage_support>>2)) 
+			{
+				data = 0xb;//1.8V power
+			}
+			else
+				data = 0xf;//3.3V power
+               		SendRequestToSDHC();
+
 			err=Initialization();
 		}
 		else
@@ -877,6 +940,18 @@ int main(int argc, char *argv[])
                         bytemask = 3;
                         data = 4;
                         SendRequestToSDHC();
+			//SD bus Power control
+                        PhyAdd = SD_Base + powercontrol;
+                        rw = 0;
+                        bytemask = 1;
+			if((voltage_support >>2))
+			{
+                        	data = 0xb;//1.8V power
+			}
+			else 
+				data = 0xf;//3.3V power
+                        SendRequestToSDHC();
+
 
 			err =UHSInitialization();
 		}
