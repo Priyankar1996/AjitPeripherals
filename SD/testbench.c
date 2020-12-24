@@ -448,7 +448,8 @@ int tuning()
 
 int Initialization()
 {
-	int Resp=0,busy=0;
+	int Resp=0,busy=0,a;
+	int Card_Is_Locked=0;
 	int flag=0;
 	int CCS;
  	SendCMD(0);
@@ -513,13 +514,19 @@ int Initialization()
         Resp = GetResponseFromSDHC();
         SendACMD(6);
         Resp = GetResponseFromSDHC();
+	//Data Transfer width to 1 in Host control register
+	PhyAdd = SD_Base + hostcontrol;
+        rw = 0;
+        bytemask = 1;
+        data = 2;
+        SendRequestToSDHC();
 
 
 }
 
 int UHSInitialization()
 {
-	int Resp=0,busy=0,flag=0;
+	int Resp=0,busy=0,flag=0,a;
 	int Card_Is_Locked=0;
 	SendCMD(0);
 	SendCMD(8);
@@ -558,18 +565,58 @@ int UHSInitialization()
 	}
 	SendCMD(11);
 	Resp = GetResponseFromSDHC();
-	if(!Resp)
+	if(Resp!=0x200)
 	{
 		flag=1;
-		fprintf(stderr,"Switching not possible.Check the following:\n 1.Voltage Switch Support \n 2.Incorrect ACMD41(S18)\n 3.Not in ready state\n 4.Voltage already switched");
+		fprintf(stderr,"Switching not possible.Check the following:\n 1.Voltage Switch Support \n 2.Incorrect ACMD41(S18)\n 3.Not in ready state\n 4.Voltage already switched Response = %d",Resp);
 		return flag;
 	}
-	int a = checkDATline();
+	//Stop providing SD clock to the card
+	//SD clock Enable = 0
+	PhyAdd = SD_Base + clockcontrol;
+	rw = 0;
+        bytemask = 3;
+	data = 0;
+	SendRequestToSDHC();
+
+	a = checkDATline();
+	if( a!= 0)
+	{
+		fprintf(stderr,"Error");
+		return 1;
+	}
+
+	PhyAdd = SD_Base + hostcontrol2;
+	rw = 0;
+	bytemask = 3;
+	data = 0x8;//1.8V Signal Enable
+	SendRequestToSDHC();
+	//wait 5ms
+	//
+	//
+	//check 1.8V signal
+	Resp = ReceiveFromSDHC(hostcontrol2,3);
+	if( ((Resp >>3) & 1) == 0)
+	{
+		fprintf(stderr,"Error in 1.8 Volt signalling");
+		return 1;
+	}
+
+	//Provide SD clock
+	PhyAdd = SD_Base + clockcontrol;
+        rw = 0;
+        bytemask = 3;
+        data = 4;
+        SendRequestToSDHC();
+	// wait for 1ms
+	//
+	//
+	a = checkDATline();
 	while(a!=0xf)
 	{
 		a = checkDATline();//dat[3:0]=1111 indicates switching successful.This function will check [23:20] bit in the present state register.
 	}
-	a =0;
+	a = 0;
 	SendCMD(2);
 	GetBigResponse();
 	SendCMD(3);
@@ -591,10 +638,19 @@ int UHSInitialization()
 	}
 	SendCMD(55);
 	Resp = GetResponseFromSDHC();
+
 	SendACMD(6);
 	Resp = GetResponseFromSDHC();
 	SendCMD(6);//set-mode cmd(6)
 	Resp = GetResponseFromSDHC();
+	// Data Transfer Width to 1 in host control 1
+	PhyAdd = SD_Base + hostcontrol;
+        rw = 0;
+        bytemask = 1;
+        data = 2;
+        SendRequestToSDHC();
+
+
 	flag = tuning ();
 	return flag;
 	//int count=40;
@@ -719,21 +775,9 @@ int BlockRead(int bsize, int bcount)
 int main(int argc, char *argv[])
 {
 
-	//Test initialization-T1
-		// CMD0 Arguement 0x0000
-		// CMD0 Command  0x001A
-		// CMD8 Arguement 
-		// CMD8 Command
-		// CMD55 Arguement
-		// CMD55 Command
-		// ACMD41 Arguement
-		// ACMD41 Command
-		// CMD2 Arguement
-		// CMD2 Command
-		// CMD3 Arguement
-		// CMD3 Command	
-	int err,i;
+	int err,i,flag=0;
 	int read_data;
+	int sdclk_freq;
 	
 		if (argc <2)
 		{
@@ -758,14 +802,84 @@ int main(int argc, char *argv[])
 //        init_pipe_handler();
 //        start_daemons (fp,0);
 //#endif
+		//card insertion and removal status enable
 	
+		//card insertion and removal signal enable
+		
+		flag = generate_interrupt(0xc0);
+		//clear the insertion interrupt
+		interrupt_clear(0x40);
+		//present state -> card inserted check
+		read_data = ReceiveFromSDHC(present,0);
+		
+		if( ((read_data >> 16) &1) !=1)
+		{
+			fprintf(stderr,"Card not present ");
+			return (1);
+		}
+		//software reset
+		PhyAdd = SD_Base + swreset;
+		rw = 0;
+		bytemask = 1;
+		data = 1;
+		SendRequestToSDHC();
 
+		read_data = ReceiveFromSDHC(capa, 0);	//reading capabilities register	
+		fprintf(stderr," Capabilities reg = %d ",read_data);
 
-
+		fprintf(stderr," Base Clock Frequency For SD Clock is %d ",(read_data>>8));
+	       	
+		
 		if ( atoi(argv[2]) ==0)
+		{
+			sdclk_freq = (read_data>>8) / 50;
+			PhyAdd = SD_Base + clockcontrol;
+	                rw = 0;
+        	        bytemask = 3;
+                	data =(sdclk_freq<<6) | 1 ;
+               		SendRequestToSDHC();//Internal clock enable and SDCLK frequency select
+
+			read_data = ReceiveFromSDHC(clockcontrol,3);
+
+			while( ((read_data >>1)&1) !=1)
+			{
+				read_data = ReceiveFromSDHC(clockcontrol,3);
+			}//Run until Internal Clock Stable
+
+			//SD clock Enable
+			PhyAdd = SD_Base + clockcontrol;
+                        rw = 0;
+                        bytemask = 3;
+                        data = 4;
+                        SendRequestToSDHC();
+			
 			err=Initialization();
+		}
 		else
-		    err =UHSInitialization();
+		{
+			sdclk_freq = (read_data>>8);
+                        PhyAdd = SD_Base + clockcontrol;
+                        rw = 0;
+                        bytemask = 3;
+                        data =(sdclk_freq<<6) | 1 ;
+                        SendRequestToSDHC();//Internal clock enable and SDCLK frequency select
+
+                        read_data = ReceiveFromSDHC(clockcontrol,3);
+
+                        while( ((read_data >>1)&1) !=1)
+                        {
+                                read_data = ReceiveFromSDHC(clockcontrol,3);
+                        }//Run until Internal Clock Stable
+
+                        //SD clock Enable
+                        PhyAdd = SD_Base + clockcontrol;
+                        rw = 0;
+                        bytemask = 3;
+                        data = 4;
+                        SendRequestToSDHC();
+
+			err =UHSInitialization();
+		}
 		if(err)
 		{
 			fprintf(stderr,"Error in Initialization");
