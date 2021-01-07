@@ -1,5 +1,5 @@
 /*TESTBENCH FOR SD HOST CONTROLLER
-  Authors: Arghya Kamal Dey, Priyankar Sarkar.
+  Authors: Arghya Kamal Dey, Priyankar Sarkar,Ajinkya Raghuwanshi,Deval Patel.
   Date: December,2020.
 */
 #include <pthread.h>
