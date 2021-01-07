@@ -1,3 +1,7 @@
+/*TESTBENCH FOR SD HOST CONTROLLER
+  Authors: Arghya Kamal Dey, Priyankar Sarkar.
+  Date: December,2020.
+*/
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -7,17 +11,9 @@
 #include <Pipes.h>
 #include <pipeHandler.h>
 #include <stdbool.h>
+#include <time.h>
 
-//#ifndef AA2C
- //       #include "vhdlCStubs.h"
-//#else
-//        #include "aa_c_model.h"
-//#endif
-
-
-//typedef bool uint1_t;
-//registers
-
+//List of registers to be used.
 #define blocksize 0x04
 #define blockcount 0x06
 #define argument 0x08
@@ -31,10 +27,7 @@
 #define present 0x24
 #define hostcontrol 0x28
 #define powercontrol 0x29
-//#define blockgapcontrol 0x2A
-//#define wakeupcontrol 0x2B
 #define clockcontrol 0x2C
-//#define timeoutcontrol 0x2E
 #define swreset 0x2F
 #define nintrstatus 0x30
 #define eintrstatus 0x32
@@ -45,142 +38,136 @@
 #define autocmderror 0x3C
 #define hostcontrol2 0x3E
 #define capa 0x40
-//#define maxIcap 0x48
-//#define HCversion 0xFE
-
 
 #define SD_Base 0x00//SD base address
-  
 
 long int rw = 0;
-long int bytemask;
-long int PhyAdd;
-int data;
-int OCR;
-int RCA = 0;
-int writed;
-int addressd;
+long int bytemask,PhyAdd;
+int data,OCR,RCA = 0,writed,addressd;
 
-
-
+//This function is used to send request to the SDHC.The bit pattern followed is as mentioned in the manual.
 void SendRequestToSDHC()
 {
 	/*Bit 63: rw
-          Bit 62-59: bytemask
-          Bits 58-56: Unused
+      Bit 62-59: bytemask
+      Bits 58-56: Unused
 	  Bits 55-32: Physical address
-          Bits 31- 0: Write-data*/
+      Bits 31- 0: Write-data*/
 	uint64_t write_data;
-	
 	write_data = (rw << 63) | (bytemask<<59) | (PhyAdd << 32) | data ;
-
 	write_uint64 ("peripheral_bridge_to_sdhc_request",write_data);
 }
 
+//There exists two types of interrupts, normal interrupt and error interrupts.
+// normalinterrupt() and errorinterrupt() functions modifies the value of ninterrupt
+// and einterrupt when it is generated.
 int normalinterrupt()
 {
-        uint8_t intr =0;
-        int interrupt;
-        intr = read_uint8("nintrrupt");
-
-        interrupt = (intr & 0x1);
-
-        return interrupt;
+    uint8_t intr =0;
+    int interrupt;
+    intr = read_uint8("nintrrupt");
+    interrupt = (intr & 0x1);
+    return interrupt;
 }
 
 int errorinterrupt()
 {
-        uint8_t intr =0;
-        int interrupt;
-        intr = read_uint8("eintrrupt");
-
-        interrupt = (intr & 0x1);
-        return interrupt;
+    uint8_t intr =0;
+    int interrupt;
+    intr = read_uint8("eintrrupt");
+    interrupt = (intr & 0x1);
+    return interrupt;
 }
 
-void interrupt_clear(int d)
+void clear_normal_interrupt(int d)
+//This function clears the normal interrupt status when it is generated.
 {
-        PhyAdd = SD_Base + nintrstatus ;
-        bytemask = 3;
-        rw = 0;
-        data = data;
-        SendRequestToSDHC();
+    PhyAdd = SD_Base + nintrstatus ;
+    bytemask = 3;
+    rw = 0;
+    data = d;
+    SendRequestToSDHC();
 
 }
+
 void clear_error_interrupt()
 {
+//This function clears the error interrupt status when it is generated.
 	PhyAdd = SD_Base + eintrstatus ;
-        bytemask = 3;
-        rw = 0;
-        data = 0xffff;
-        SendRequestToSDHC();
+    bytemask = 3;
+    rw = 0;
+    data = 0xffff;
+    SendRequestToSDHC();
 }
+
+//Generates (error and normal) interrupt based on the status of interrupt status and 
+//signal registers. It checks for their statuses and based on them only
+//the following interrrupts are asserted.
 int generate_error_interrupt()
-{
+{ 
 	int status_intr,flag;
-        uint32_t status;
-        PhyAdd = SD_Base + eintrstatusen ;
-        bytemask = 3;
-        rw = 0;
-        data = 0xffff;
-        SendRequestToSDHC();
-        PhyAdd = SD_Base + eintrsignalen ;
-        bytemask = 3;
-        rw = 0;
-        data = 0xffff;
-        SendRequestToSDHC();
+    uint32_t status;
+    PhyAdd = SD_Base + eintrstatusen ;
+    bytemask = 3;
+    rw = 0;
+    data = 0xffff;
+    SendRequestToSDHC();
+    PhyAdd = SD_Base + eintrsignalen ;
+    bytemask = 3;
+    rw = 0;
+    data = 0xffff;
+    SendRequestToSDHC();
 
-        PhyAdd = SD_Base + eintrstatus ;
-        bytemask = 3;
-        rw = 1;
+    PhyAdd = SD_Base + eintrstatus ;
+    bytemask = 3;
+    rw = 1;
 
-        status = read_uint32("sdhc_to_peipheral_bridge_response");
+    status = read_uint32("sdhc_to_peipheral_bridge_response");
 	int error_intr =status;
-        fprintf(stderr,"Interrupt status is %d",error_intr);
-
-        //checking for interrupt
+    fprintf(stderr,"Interrupt status is %d",error_intr);
         
-        flag = errorinterrupt();
+	//checking for interrupt        
+    flag = errorinterrupt();
 	if (flag == 1)
-		clear_error_interrupt();
-        return flag;
+	clear_error_interrupt();
+    return flag;
 }
-int generate_interrupt(int data)
+
+int generate_normal_interrupt(int data)
 {
-        int status_intr,flag;
-        uint32_t status;
-        PhyAdd = SD_Base + nintrstatusen ;
-        bytemask = 3;
-        rw = 0;
-        data = data;
-        SendRequestToSDHC();
-        PhyAdd = SD_Base + nintrsignalen ;
-        bytemask = 3;
-        rw = 0;
-        data = data;
-        SendRequestToSDHC();
+    int status_intr,flag;
+    uint32_t status;
+    PhyAdd = SD_Base + nintrstatusen ;
+    bytemask = 3;
+    rw = 0;
+    data = data;
+    SendRequestToSDHC();
+    PhyAdd = SD_Base + nintrsignalen ;
+    bytemask = 3;
+    rw = 0;
+    data = data;
+    SendRequestToSDHC();
 
-        PhyAdd = SD_Base + nintrstatus ;
-        bytemask = 3;
-        rw = 1;
+    PhyAdd = SD_Base + nintrstatus ;
+    bytemask = 3;
+    rw = 1;
 
-        status = read_uint32("sdhc_to_peipheral_bridge_response");
+    status = read_uint32("sdhc_to_peipheral_bridge_response");
 
-        int count =0;
-        int temp_data = data;
-        while(1)
+    int count = 0,temp_data = data;
+    while(1)
+    {
+        if( (temp_data >>1) != 1)
         {
-                if( (temp_data >>1) != 1)
-                {
-                        count ++;
-                }
-		 else
-                        break;
+            count ++;
         }
+		else
+            break;
+    }
 
-        status_intr = (status & data) >> count;
+    status_intr = (status & data) >> count;
 
-        fprintf(stderr,"Interrupt status is %d",status_intr);
+    fprintf(stderr,"Interrupt status is %d",status_intr);
 
         //checking for interrupt
         while(1){
@@ -196,44 +183,39 @@ int generate_interrupt(int data)
 }
 
 
-
-
-
-
 void casefunc(int dat, int n)
 {
-			int flag=0;
-			PhyAdd =SD_Base+argument;
-                        data = dat;
-			bytemask = 0;
-			rw = 0;
-                        SendRequestToSDHC();
-			if ( (n == 17) || (n ==18) || (n==24) || (n==25))
-			{
-                        	PhyAdd = SD_Base + transfer;
-				bytemask = 3;
-				rw = 0;
-                        	data = GenerateTran(n);
-                        	SendRequestToSDHC();
-			}
-			PhyAdd = SD_Base + command;
-			bytemask = 3;
-			rw = 0;
-                        data = GenerateCMD(n);
-                        SendRequestToSDHC();
-			flag = generate_error_interrupt();
-			if(flag == 1)
-			{
-				fprintf(stderr,"Error occurred");
-			}
-			else
-			{
-				flag = generate_interrupt ( 0x1);			
-				interrupt_clear(0x01);
-			}
-
-
+	int flag=0;
+	PhyAdd =SD_Base+argument;
+    data = dat;
+	bytemask = 0;
+	rw = 0;
+    SendRequestToSDHC();
+	if ( (n == 17) || (n ==18) || (n==24) || (n==25))
+	{
+        PhyAdd = SD_Base + transfer;
+		bytemask = 3;
+		rw = 0;
+    	data = GenerateTran(n);
+        SendRequestToSDHC();
+	}
+	PhyAdd = SD_Base + command;
+	bytemask = 3;
+	rw = 0;
+    data = GenerateCMD(n);
+    SendRequestToSDHC();
+	flag = generate_error_interrupt();
+	if(flag == 1)
+	{
+		fprintf(stderr,"Error occurred");
+	}
+	else
+	{
+		flag = generate_normal_interrupt ( 0x1);			
+		clear_normal_interrupt(0x01);
+	}
 }
+
 int ReceiveFromSDHC(int address, int bytemask_data)
 {
 	uint32_t read_data;
@@ -250,6 +232,8 @@ int ReceiveFromSDHC(int address, int bytemask_data)
 	
 }
 
+//Commands are sent by the host to the controller.This function generates 
+//the commands.Two separate functions for CMD and ACMD commands.
 void SendCMD(int n)
 {
 
@@ -337,11 +321,11 @@ void SendACMD(int n)
 	casefunc(data,n);
 }
 
-
+//Generates command as per the standard.
 int GenerateCMD(int n)
 {
 	int cmd;
-	if( (n == 0)||(n==2)||(n==9)||(n==10))//R2
+	if( (n == 0)||(n==2)||(n==9)||(n==10))//Response generated is R2.
 	{
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
 		/*(13:08)Index 
@@ -352,12 +336,13 @@ int GenerateCMD(int n)
 		  (1:0) Response type*/
 
 	}
-	else if ((n == 411) || (n == 412)) //R3
+	else if ((n == 411) || (n == 412)) //Response generated is R3.
 	{
 		n=41;
 		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
 	}
-	else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24)||(n==25))//R1,R7
+	else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24)||(n==25))
+	//Response generated is of the type R1/R7.
 	{
 		if((n==17)||(n==24)||(n==25))
 			cmd = (n<<8)|(0<<6)|(1<<5)|(1<<4)|(1<<3)|(0<<2)|2;
@@ -371,7 +356,9 @@ int GenerateCMD(int n)
 	return (cmd & 0x0000ffff);
 
 }
+
 int GenerateTran(int n)
+//
 {
 	// 5 Multi/single block
 	// 4 Data Transfer Direction select
@@ -399,9 +386,9 @@ int GenerateTran(int n)
 
 int checkDATline()
 {
-
+//Checks the status of the data lines(Required for commands' responses).
 	uint32_t read_data;
-       	int resp;
+    int resp;
 	rw = 1;
 	PhyAdd = SD_Base + present ;
 	data = 0;
@@ -415,9 +402,7 @@ int checkDATline()
 
 int GetResponseFromSDHC()
 {
-	
-	/*
-	  Bits 31-0: Read-Data*/
+	//Bits 31-0: Read-Data
 	uint32_t read_data;
 	int resp;
 	rw=1;
@@ -430,32 +415,36 @@ int GetResponseFromSDHC()
 	return resp;
 
 }
+
 void GetBigResponse()
-{
+{//Generates a 128bit response.
 	uint32_t read_data;
 	int r0,r2,r4,r6;
 	rw = 1;
 	data = 0;
 	
-              PhyAdd= SD_Base + resp0;
-              SendRequestToSDHC();
-	      	  read_data = read_uint32("sdhc_to_peripheral_bridge_response");
-	      	  r0 = read_data;
-	          PhyAdd= SD_Base + resp2;
-              SendRequestToSDHC();
-              read_data = read_uint32("sdhc_to_peripheral_bridge_response");
-              r2 = read_data;
-	          PhyAdd= SD_Base + resp4;
-              SendRequestToSDHC();
-              read_data = read_uint32("sdhc_to_peripheral_bridge_response");
-              r4 = read_data;
-	          PhyAdd= SD_Base + resp6;
-              SendRequestToSDHC();
-              read_data = read_uint32("sdhc_to_peripheral_bridge_response");
-              r6 = read_data;
+    PhyAdd= SD_Base + resp0;
+    SendRequestToSDHC();
+	read_data = read_uint32("sdhc_to_peripheral_bridge_response");
+	r0 = read_data;
+	PhyAdd= SD_Base + resp2;
+    SendRequestToSDHC();
+    read_data = read_uint32("sdhc_to_peripheral_bridge_response");
+    r2 = read_data;
+    PhyAdd= SD_Base + resp4;
+    SendRequestToSDHC();
+    read_data = read_uint32("sdhc_to_peripheral_bridge_response");
+    r4 = read_data;
+	PhyAdd= SD_Base + resp6;
+    SendRequestToSDHC();
+    read_data = read_uint32("sdhc_to_peripheral_bridge_response");
+    r6 = read_data;
 }
+
 int tuning()
 {
+	//For high clock speeds, tuning of the block is necessary.This function
+	//generates tuning blocks.
 	int Resp=0,count=40,execute_tuning,sampling_clock_select, buffer_read_ready=0;
 	PhyAdd = SD_Base + hostcontrol2;
 	bytemask = 3;
@@ -470,14 +459,14 @@ int tuning()
 		Resp= GetResponseFromSDHC();
 		//Check for Buffer Read Ready
 		while( buffer_read_ready == 0){
-		buffer_read_ready = generate_interrupt(0x20);
+		buffer_read_ready = generate_normal_interrupt(0x20);
 		}
 		//Clear Buffer Read Ready
-		interrupt_clear(0x20);
+		clear_normal_interrupt(0x20);
 		//execute tuning read
 		PhyAdd = SD_Base + hostcontrol2;
-	        bytemask = 3;
-       		rw=1;
+	    bytemask = 3;
+       	rw=1;
 		read_tuning_data=read_uint32("sdhc_to_peripheral_bridge_response");
 		execute_tuning = (read_tuning_data & 0x40)>>6;
 		if(execute_tuning==0)
@@ -494,6 +483,8 @@ int tuning()
 
 int Initialization()
 {
+//Series of commands are generated to initialise it to operate in 3.3V level
+//Max allowable data rate is 25MHz.
 	int Resp=0,busy=0,a;
 	int Card_Is_Locked=0;
 	int flag=0;
@@ -572,6 +563,9 @@ int Initialization()
 
 int UHSInitialization()
 {
+//UHSInitialisation is used to initialise the HC to operate in high speed modes.
+//Operating voltage is 1.8V for data tranfer and max allowable data rate is 108MHz.
+//Note: Card can be set up using UHSInitialisation() only.
 	int Resp=0,busy=0,flag=0,a;
 	int Card_Is_Locked=0;
 	SendCMD(0);
@@ -637,9 +631,6 @@ int UHSInitialization()
 	bytemask = 3;
 	data = 0x8;//1.8V Signal Enable
 	SendRequestToSDHC();
-	//wait 5ms
-	//
-	//
 	//check 1.8V signal
 	Resp = ReceiveFromSDHC(hostcontrol2,3);
 	if( ((Resp >>3) & 1) == 0)
@@ -654,9 +645,7 @@ int UHSInitialization()
         bytemask = 3;
         data = 4;
         SendRequestToSDHC();
-	// wait for 1ms
-	//
-	//
+
 	a = checkDATline();
 	while(a!=0xf)
 	{
@@ -707,13 +696,13 @@ int UHSInitialization()
 	//	count--;
 	//}
 }
-//int writed;
-//int addressd;
+
 int Blockwrite(int bsize, int bcount)
 {
+//Sets up the SD Card to write data into the flash.
+//Supports single and multiple blockwrite.
 	int flag = 0,i;
 	int Resp;
-	//writed = x;
 	addressd= 0;
 	//Set Block Size 
 	PhyAdd = SD_Base + blocksize;
@@ -744,9 +733,9 @@ int Blockwrite(int bsize, int bcount)
 	int buffer_write_ready_interrupt;
 	while(bcount!=0)
 	{
-			buffer_write_ready_interrupt=generate_interrupt(0x10);		
+			buffer_write_ready_interrupt=generate_normal_interrupt(0x10);		
 			fprintf(stderr,"Buffer Write Ready Interrupt occured,ready to write buffer");
-			interrupt_clear(0x10);
+			clear_normal_interrupt(0x10);
 			fprintf(stderr,"Buffer Write Ready Interrupt cleared,wait for interrupt to occur");
 			//Set block data
 			
@@ -761,8 +750,8 @@ int Blockwrite(int bsize, int bcount)
 			bcount--;
 	
 	}
-	int transfer_complete = generate_interrupt(0x2);
-	interrupt_clear(0x2);
+	int transfer_complete = generate_normal_interrupt(0x2);
+	clear_normal_interrupt(0x2);
 	SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag ;
@@ -770,6 +759,8 @@ int Blockwrite(int bsize, int bcount)
 
 int BlockRead(int bsize, int bcount)
 {
+	//Sets up the SD Card to read data from the flash.
+	//Supports single and multiple blockwrite.
 	int flag =0,i;
 	int Resp;
 	int block_data;
@@ -796,27 +787,26 @@ int BlockRead(int bsize, int bcount)
 	//Wait for Buffer Read Ready Interrupt
 	while(bcount!=0)
 	{
-
-			buffer_read_ready_interrupt=generate_interrupt(0x20);
-			fprintf(stderr,"Buffer Read Ready Interrupt occured,ready to write buffer");
-			interrupt_clear(0x20);
-			fprintf(stderr,"Buffer Read Ready Interrupt cleared,wait for interrupt to occur");
-			//Get Block Data
-			for(i=0; i< 128; i++)
+		buffer_read_ready_interrupt=generate_normal_interrupt(0x20);
+		fprintf(stderr,"Buffer Read Ready Interrupt occured,ready to write buffer");
+		clear_normal_interrupt(0x20);
+		fprintf(stderr,"Buffer Read Ready Interrupt cleared,wait for interrupt to occur");
+		//Get Block Data
+		for(i=0; i< 128; i++)
+		{
+			block_data = ReceiveFromSDHC(bufferdata,0);
+			fprintf(stderr," Blockdata[%d] %d", i, block_data);
+			if(block_data != i)
 			{
-				block_data = ReceiveFromSDHC(bufferdata,0);
-				fprintf(stderr," Blockdata[%d] %d", i, block_data);
-				if(block_data != i){
-					fprintf(stderr,"Error ..Expected = %d , Actual =%d ", i, block_data);
-					flag =1;
-				}
+				fprintf(stderr,"Error ..Expected = %d , Actual =%d ", i, block_data);
+				flag =1;
 			}
-			bcount--;
-		
+		}
+		bcount--;
 	}
-	int transfer_complete = generate_interrupt(0x2);
-        interrupt_clear(0x2);
-        SendCMD(15);
+	int transfer_complete = generate_normal_interrupt(0x2);
+    clear_normal_interrupt(0x2);
+    SendCMD(15);
 	Resp = GetResponseFromSDHC();
 	return flag;
 }
@@ -849,17 +839,13 @@ int main(int argc, char *argv[])
                         	return(1);
                 	}
         	}
-//#ifdef AA2C
-//        init_pipe_handler();
-//        start_daemons (fp,0);
-//#endif
 		//card insertion and removal status enable
 	
 		//card insertion and removal signal enable
 		
-		flag = generate_interrupt(0xc0);
+		flag = generate_normal_interrupt(0xc0);
 		//clear the insertion interrupt
-		interrupt_clear(0x40);
+		clear_normal_interrupt(0x40);
 		//present state -> card inserted check
 		read_data = ReceiveFromSDHC(present,0);
 		
