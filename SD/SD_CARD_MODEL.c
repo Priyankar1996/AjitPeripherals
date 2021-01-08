@@ -1,5 +1,5 @@
 // SD Card model for SD Card Host controller:
-// Authors: Ajinkya.S.Raghuwanshi, Deval.Patel
+// Authors: Ajinkya.S.Raghuwanshi, Deval.Patel, Priyankar. Sarkaar, Arghey. Dev
 // DAte: January 2021
 
 #include <pthread.h>
