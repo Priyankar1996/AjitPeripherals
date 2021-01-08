@@ -41,12 +41,9 @@
 
 #define SD_Base 0x00//SD base address
 
-//long int rw = 0;
-//long int bytemask,PhyAdd;
-//int data;
 int OCR,RCA = 0,writed,addressd;
 
-//This function is used to send request to the SDHC.The bit pattern followed is as mentioned in the manual.
+//This function is used to send request to the SDHC.The bit pattern followed as it is in the SD host C model
 void SendRequestToSDHC(long int rwbar, long int bytemask, long int PhyAdd, int data)
 {
 	/*Bit 63: rwbar
@@ -60,7 +57,7 @@ void SendRequestToSDHC(long int rwbar, long int bytemask, long int PhyAdd, int d
 }
 
 //There exists two types of interrupts, normal interrupt and error interrupts.
-// normalinterrupt() and errorinterrupt() functions modifies the value of ninterrupt
+// normalinterrupt() and errorinterrupt() functions reads the value of ninterrupt
 // and einterrupt when it is generated.
 int normalinterrupt()
 {
@@ -116,7 +113,7 @@ int generate_error_interrupt()
 	clear_error_interrupt();
     return flag;
 }
-
+//The host is looking for a normal interrupt from the host controller here
 int generate_normal_interrupt(int data)
 {
     int status_intr,flag;
@@ -156,7 +153,8 @@ int generate_normal_interrupt(int data)
         }
         return flag;
 }
-
+// Sets up the argument, transfer and at the command register
+// When the upper bytes of the command register are written then the command is sent
 void casefunc(int dat, int n)
 {
     int flag=0,data;
@@ -328,7 +326,7 @@ int checkDATline()
 	resp = (read_data >> 20) & 0xf;
 	return resp;		
 }
-
+// Recieves response from resp0 register for 32 bit responses
 int GetResponseFromSDHC()
 {
 	//Bits 31-0: Read-Data
@@ -589,7 +587,7 @@ int UHSInitialization()
 	flag = tuning ();
 	return flag;
 }
-
+// Blocks are written in accordance to march test
 int Blockwrite(int bsize, int bcount)
 {
 //Sets up the SD Card to write data into the flash.
@@ -639,7 +637,7 @@ int Blockwrite(int bsize, int bcount)
 	Resp = GetResponseFromSDHC();
 	return flag ;
 }
-
+// Here blocks are read and checked for correctness of the data according to march test
 int BlockRead(int bsize, int bcount)
 {
 	//Sets up the SD Card to read data from the flash.
@@ -685,11 +683,40 @@ int BlockRead(int bsize, int bcount)
     Resp = GetResponseFromSDHC();
     return flag;
 }
+//SD clock control and power control function
+void SDclock_powercontrol(int sdclk_freq,int voltage_support)
+{
+	 int Add,data,read_data;
+	 Add = SD_Base + clockcontrol;
+	 data =(sdclk_freq<<6) | 1 ;
+         SendRequestToSDHC(0,3,Add,data);//Internal clock enable and SDCLK frequency select
+         read_data = ReceiveFromSDHC(clockcontrol,3);
+         while( ((read_data >>1)&1) !=1)
+         {
+               read_data = ReceiveFromSDHC(clockcontrol,3);
+         }//Run until Internal Clock Stable
 
-
+         //SD clock Enable
+         Add = SD_Base + clockcontrol;
+         SendRequestToSDHC(0,3,Add,4);
+         //SD bus Power control
+         Add = SD_Base + powercontrol;
+         if((voltage_support >>2))
+                 data = 0xb;//1.8V power
+         else
+                 data = 0xf;//3.3V power
+         SendRequestToSDHC(0,1,Add,data);
+}
+// Main function
+// Check if Card is inserted
+// Software reset
+// Clock Enabled
+// Power Enabled
+// Initialization of the card is done
+// If initialized then blocks are written
+// After successful write block read is done to check memory
 int main(int argc, char *argv[])
 {
-
 	int err,i,flag=0;
 	int read_data,Add,data;
 	int sdclk_freq;
@@ -714,10 +741,9 @@ int main(int argc, char *argv[])
                         	return(1);
                 	}
         	}
+		//Whether card is inserted is checked
 		//card insertion and removal status enable
-	
-		//card insertion and removal signal enable
-		
+		//card insertion and removal signal enable		
 		flag = generate_normal_interrupt(0xc0);
 		//clear the insertion interrupt
 		clear_normal_interrupt(0x40);
@@ -743,70 +769,28 @@ int main(int argc, char *argv[])
 		if ( atoi(argv[2]) ==0)
 		{
 			sdclk_freq = (read_data>>8) / 50;
-			Add = SD_Base + clockcontrol;
-                	data =(sdclk_freq<<6) | 1 ;
-               		SendRequestToSDHC(0,3,Add,data);//Internal clock enable and SDCLK frequency select
-			read_data = ReceiveFromSDHC(clockcontrol,3);
-			while( ((read_data >>1)&1) !=1)
-			{
-				read_data = ReceiveFromSDHC(clockcontrol,3);
-			}//Run until Internal Clock Stable
-
-			//SD clock Enable
-			Add = SD_Base + clockcontrol;
-                        SendRequestToSDHC(0,3,Add,4);
-			//SD bus Power control
-			Add = SD_Base + powercontrol;
-			if((voltage_support>>2)) 
-				data = 0xb;//1.8V power
-			else
-				data = 0xf;//3.3V power
-               		SendRequestToSDHC(0,1,Add,data);
-
+			SDclock_powercontrol(sdclk_freq,voltage_support);//clock and power control done
 			err=Initialization();
 		}
 		else
 		{
 			sdclk_freq = (read_data>>8);
-                        Add = SD_Base + clockcontrol;
-                        data =(sdclk_freq<<6) | 1 ;
-                        SendRequestToSDHC(0,3,Add,data);//Internal clock enable and SDCLK frequency select
-                        read_data = ReceiveFromSDHC(clockcontrol,3);
-                        while( ((read_data >>1)&1) !=1)
-                        {
-                                read_data = ReceiveFromSDHC(clockcontrol,3);
-                        }//Run until Internal Clock Stable
-
-                        //SD clock Enable
-                        Add = SD_Base + clockcontrol;
-                        SendRequestToSDHC(0,3,Add,4);
-			//SD bus Power control
-                        Add = SD_Base + powercontrol;
-			if((voltage_support >>2))
-                        	data = 0xb;//1.8V power
-			else 
-				data = 0xf;//3.3V power
-                        SendRequestToSDHC(0,1,Add,data);
+                        SDclock_powercontrol(sdclk_freq,voltage_support);//clock and power control done
 			err =UHSInitialization();
 		}
 		if(err)
-		{
 			fprintf(stderr,"Error in Initialization");
-		}
 		else
 			fprintf(stderr,"Succesfully Initialized");
 		
 		//Blockwrite with 512 bytes block size and 2^31 block count 
 		err = Blockwrite(512,65535);
 		if(err)
-	    	{
             		fprintf(stderr,"Error in BlockWrite");
-        	}
+        	
 		//Blockread with 512 bytes block size
 		err = BlockRead(512,65535);
 		if(err)
-		{
 			fprintf(stderr," Error in Block read");
-		}
 	return 0;
 }
