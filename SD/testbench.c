@@ -741,6 +741,9 @@ int main(int argc, char *argv[])
                         	return(1);
                 	}
         	}
+		//SDHC thread is started
+		start_sdhc_threads();
+
 		//Whether card is inserted is checked
 		//card insertion and removal status enable
 		//card insertion and removal signal enable		
