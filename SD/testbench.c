@@ -52,79 +52,90 @@ void SendRequestToSDHC(long int rwbar, long int bytemask, long int PhyAdd, int d
 	  Bits 55-32: Physical address
           Bits 31- 0: data*/
 	uint64_t write_data;
+	uint32_t read_data;
 	write_data = (rwbar << 63) | (bytemask<<59) | (PhyAdd << 32) | data ;
 	write_uint64 ("peripheral_bridge_to_sdhc_request",write_data);
+	//In case of write (rwbar =0) there should be a zero recieved as an acknowledgement
+	if(rwbar = 0)
+	{
+		do{
+			read_data = read_uint32("sdhc_to_peripheral_bridge_response");
+		}while(read_data !=0);
+	}
+	//When it is a read(rwbar =1) there will be read operation outside this function specific to the operation
 }
 
-//There exists two types of interrupts, normal interrupt and error interrupts.
-// normalinterrupt() and errorinterrupt() functions reads the value of ninterrupt
-// and einterrupt when it is generated.
-int normalinterrupt()
+//This function is for checking the interrupt line
+int interrupt_check()
 {
     uint8_t intr =0;
     int interrupt;
-    intr = read_uint8("nintrrupt");
+    intr = read_uint8("SDHC_to_IRC_INT");
     interrupt = (intr & 0x1);
     return interrupt;
 }
-
-int errorinterrupt()
-{
-    uint8_t intr =0;
-    int interrupt;
-    intr = read_uint8("eintrrupt");
-    interrupt = (intr & 0x1);
-    return interrupt;
-}
-
 void clear_normal_interrupt(int d)
 //This function clears the normal interrupt status when it is generated.
 {
     int Add = SD_Base + nintrstatus ;
     SendRequestToSDHC(0,3,Add,d);
 }
-
 void clear_error_interrupt()
 {
 //This function clears the error interrupt status when it is generated.
     int Add = SD_Base + eintrstatus ;
     SendRequestToSDHC(0,3,Add,0xffff);
 }
-
-//Generates (error and normal) interrupt based on the status of interrupt status and 
+//Generates interrupt based on the status of interrupt status and 
 //signal registers. It checks for their statuses and based on them only
 //the following interrrupts are asserted.
-int generate_error_interrupt()
+void enable_error_interrupt()
 { 
     int status_intr,flag;
     uint32_t status;
     int Add = SD_Base + eintrstatusen ;
-    SendRequestToSDHC(0,3,Add,0xffff);
+    SendRequestToSDHC(0,3,Add,0xffff);//writing to error interrupt status enable register
     Add = SD_Base + eintrsignalen ;
-    SendRequestToSDHC(0,3,Add,0xffff);
-    Add = SD_Base + eintrstatus ;
-    SendRequestToSDHC(1,3,Add,0);
+    SendRequestToSDHC(0,3,Add,0xffff);//writing to error interrupt signal enable register
+}
+// For reading error interrupt status register
+void check_error_interrupt()
+{
+    uint32_t status;
+    int Add = SD_Base + eintrstatus ;
+    SendRequestToSDHC(1,3,Add,0);//reding from error interrupt status register
     status = read_uint32("sdhc_to_peipheral_bridge_response");
     int error_intr =status;
     fprintf(stderr,"Interrupt status is %d",error_intr);    
-    //checking for interrupt        
-    flag = errorinterrupt();
-    if (flag == 1)
-	clear_error_interrupt();
-    return flag;
+    clear_error_interrupt();
 }
 //The host is looking for a normal interrupt from the host controller here
 int generate_normal_interrupt(int data)
 {
-    int status_intr,flag;
+    int status_intr,flag,error_check;
     uint32_t status;
     int Add = SD_Base + nintrstatusen ;
-    SendRequestToSDHC(0,3,Add,data);
+    SendRequestToSDHC(0,3,Add,data);//Writing into the normal status enable register
     Add = SD_Base + nintrsignalen ;
-    SendRequestToSDHC(0,3,Add,data);
+    SendRequestToSDHC(0,3,Add,data);//Writing into the normal signal enable register
+    //Enable error interrupt too
+    enable_error_interrupt();
+    //checking for interrupt
+        while(1){
+       		flag = interrupt_check();
+                if ( flag ==  1)
+                {
+                        break;
+                }
+        }
     Add = SD_Base + nintrstatus ;
-    SendRequestToSDHC(1,3,Add,0);
+    SendRequestToSDHC(1,3,Add,0);//Reading from the normal interrupt status register
     status = read_uint32("sdhc_to_peipheral_bridge_response");
+    //Check whether there is any error interrupt bit set or not
+    //By checking bit-15 of the status
+    error_check = (status >> 15);
+    if( error_check == 1)
+	    check_error_interrupt();
     // Using temporary variables here to find which bit of the
     // interrrupt status we are checking
     int count = 0,temp_data = data;
@@ -134,24 +145,13 @@ int generate_normal_interrupt(int data)
         {
             count ++;
         }
-		else
+	else
             break;
     }
     //status_intr can either be zero or one after the next line
     status_intr = (status & data) >> count;
     fprintf(stderr,"Interrupt status is %d",status_intr);
-
-        //checking for interrupt
-        while(1){
-       		flag = normalinterrupt();
-
-                if ( flag ==  1)
-                {
-                        break;
-                }
-
-        }
-        return flag;
+    return flag;
 }
 // Sets up the argument, transfer and at the command register
 // When the upper bytes of the command register are written then the command is sent
@@ -169,14 +169,8 @@ void casefunc(int dat, int n)
     Add = SD_Base + command;
     data = GenerateCMD(n);
     SendRequestToSDHC(0,3,Add,data);
-    flag = generate_error_interrupt();
-    if(flag == 1)
-	fprintf(stderr,"Error occurred");
-    else
-    {
-	flag = generate_normal_interrupt ( 0x1);			
-	clear_normal_interrupt(0x01);
-    }
+    flag = generate_normal_interrupt ( 0x1);			
+    clear_normal_interrupt(0x01);
 }
 //This function receives data from SDHC 
 //through sdhc_to_peripheral_bridge_response
@@ -677,7 +671,7 @@ int BlockRead(int bsize, int bcount)
 		}
 		bcount--;
 	}
-	int transfer_complete = generate_normal_interrupt(0x2);
+    int transfer_complete = generate_normal_interrupt(0x2);
     clear_normal_interrupt(0x2);
     SendCMD(15);
     Resp = GetResponseFromSDHC();
@@ -765,7 +759,7 @@ int main(int argc, char *argv[])
 		read_data = ReceiveFromSDHC(capa, 0);	//reading capabilities register	
 		fprintf(stderr," Capabilities reg = %d ",read_data);
 
-		fprintf(stderr," Base Clock Frequency For SD Clock is %d ",(read_data>>8));
+		fprintf(stderr," Base Clock Frequency For SD Clock is %d ",((read_data>>8) & 0xff));
 	       	
 		voltage_support = (read_data>>24) & 0x7;//supported voltages
 
