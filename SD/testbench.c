@@ -56,7 +56,7 @@ void SendRequestToSDHC(long int rwbar, long int bytemask, long int PhyAdd, int d
 	write_data = (rwbar << 63) | (bytemask<<59) | (PhyAdd << 32) | data ;
 	write_uint64 ("peripheral_bridge_to_sdhc_request",write_data);
 	//In case of write (rwbar =0) there should be a zero recieved as an acknowledgement
-	if(rwbar = 0)
+	if(rwbar == 0)
 	{
 		do{
 			read_data = read_uint32("sdhc_to_peripheral_bridge_response");
