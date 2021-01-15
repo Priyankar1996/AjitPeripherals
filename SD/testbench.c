@@ -39,7 +39,7 @@
 #define hostcontrol2 0x3E
 #define capa 0x40
 
-#define SD_Base 0x00//SD base address
+#define SD_Base 0xffff3300//SD base address
 
 int OCR,RCA = 0,writed,addressd;
 
@@ -265,26 +265,28 @@ void SendACMD(int n)
 int GenerateCMD(int n)
 {
 	int cmd;
-	if( (n == 0)||(n==2)||(n==9)||(n==10))//Response generated is R2.
-		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
-	else if ((n == 411) || (n == 412)) //Response generated is R3.
-	{
-		n=41;
-		cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
-	}
-	else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24)||(n==25))
-	//Response generated is of the type R1/R7.
-	{
-		if((n==17)||(n==24)||(n==25))
-			cmd = (n<<8)|(0<<6)|(1<<5)|(1<<4)|(1<<3)|(0<<2)|2;
-		else
-			cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
-	}
-	else//CMD7
-	{
-		cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
-	}
-	return (cmd & 0x0000ffff);
+	if( (n == 0)|| (n==4) ||(n==15))//No response
+                cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|0;
+        else if((n==2)||(n==9)||(n==10))//Response generated is R2.
+                cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
+        else if ((n == 411) || (n == 412)) //Response generated is R3.
+        {
+                n=41;
+                cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
+        }
+        else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24)||(n==25))
+        //Response generated is of the type R1/R7.
+        {
+                if((n==17)||(n==24)||(n==25))
+                        cmd = (n<<8)|(0<<6)|(1<<5)|(1<<4)|(1<<3)|(0<<2)|2;
+                else
+                        cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
+        }
+        else//Response Type R1b, R5b
+        {
+                cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
+        }
+        return (cmd & 0x0000ffff);
 }
 
 int GenerateTran(int n)
