@@ -6,7 +6,7 @@
 //      blockwrite()
 //      blockread()
 //
-//      swreset()xx
+//      SoftwareReset()xx
 //      initialization(1)//for UHS initialization
 //      blockwrite()
 //      blockread()
@@ -38,28 +38,30 @@
 #include <time.h>
 
 //List of registers to be used.
-#define blocksize 0x04
-#define blockcount 0x06
-#define argument 0x08
-#define transfer 0x0c
-#define command 0x0e
-#define resp0 0x10
-#define resp2 0x14
-#define resp4 0x18
-#define resp6 0x1c
-#define bufferdata 0x20
-#define present 0x24
-#define hostcontrol 0x28
-#define powercontrol 0x29
-#define clockcontrol 0x2C
-#define swreset 0x2F
-#define nintrstatus 0x30
-#define eintrstatus 0x32
-#define nintrstatusen 0x34
-#define eintrstatusen 0x36
-#define autocmderror 0x3C
-#define hostcontrol2 0x3E
-#define capa 0x40
+#define BlockSize 0x04
+#define BlockCount 0x06
+#define Arguement 0x08
+#define Transfer 0x0c
+#define Command 0x0e
+#define Response0 0x10
+#define Response2 0x14
+#define Response4 0x18
+#define Response6 0x1c
+#define BufferData 0x20
+#define PresentState 0x24
+#define HostControl 0x28
+#define PowerControl 0x29
+#define ClockControl 0x2C
+#define SoftwareReset 0x2F
+#define NormalInterruptStatus 0x30
+#define ErrorInterruptStatus 0x32
+#define NormalInterruptStatusEnable 0x34
+#define ErrorInterruptStatusEnable 0x36
+#define NormalInterruptSignalEnable 0x38
+#define ErrorInterruptSignalEnable 0x3A
+#define AutoCmdError 0x3C
+#define HostControl2 0x3E
+#define Capabilities 0x40
 
 #define SD_Base 0xffff3300//SD base address
 
@@ -102,31 +104,31 @@ int main(int argc, char *argv[])
         //card insertion and removal signal enable              
         flag = CheckInterrupt(0xc0);
         //clear the insertion interrupt
-	ack = ReadWriteSDHCRegisters(0,3,(SD_Base + nintrstatus),0x40);
-        //present state -> card inserted check
-	readData = ReadWriteSDHCRegisters(1,0,(SD_Base+present),0);
+	ack = ReadWriteSDHCRegisters(0,3,(SD_Base + NormalInterruptStatus),0x40);
+        //PresentState state -> card inserted check
+	readData = ReadWriteSDHCRegisters(1,0,(SD_Base+PresentState),0);
         if( ((readData >> 16) &1) !=1)
         {
-                fprintf(stderr,"Card not present ");
+                fprintf(stderr,"Card not PresentState ");
                 return (1);
         }
         //software reset
-        ack = ReadWriteSDHCRegisters(0,1,(SD_Base + swreset),1);
-        readData = ReadWriteSDHCRegisters(1,0,(SD_Base+capa),0);//reading capabilities register 
-        fprintf(stderr," Capabilities reg = %d ",readData);
+        ack = ReadWriteSDHCRegisters(0,1,(SD_Base + SoftwareReset),1);
+        readData = ReadWriteSDHCRegisters(1,0,(SD_Base+Capabilities),0);//reading Capabilitiesbilities register 
+        fprintf(stderr," Capabilitiesbilities reg = %d ",readData);
         fprintf(stderr," Base Clock Frequency For SD Clock is %d ",((readData>>8) & 0xff));
         voltageSupport = (readData>>24) & 0x7;//supported voltages
 
         if ( atoi(argv[2]) ==0)
         {
                 sdclkFreq = (readData>>8) / 50;
-                SDclock_powercontrol(sdclkFreq,voltageSupport);//clock and power control done
+                SDclock_PowerControl(sdclkFreq,voltageSupport);//clock and power control done
                 err=Initialization();
         }
         else
         {
                 sdclkFreq = (readData>>8);
-                SDclock_powercontrol(sdclkFreq,voltageSupport);//clock and power control done
+                SDclock_PowerControl(sdclkFreq,voltageSupport);//clock and power control done
                 err =UHSInitialization();
         }
         if(err)
@@ -160,7 +162,7 @@ int ReadWriteSDHCRegisters(long int rwbar, long int bytemask, long int phyAdd, i
         uint32_t readData;
 	int returnData;
         writeData = (rwbar << 63) | (bytemask<<59) | (phyAdd << 32) | data ;
-        write_uint64 ("peripheral_bridge_to_sdhc_request",write_data);
+        write_uint64 ("peripheral_bridge_to_sdhc_request",writeData);
         //In case of write (rwbar =0) there should be a zero recieved as an acknowledgement
 	//Otherwise Data is read
         readData = read_uint32("sdhc_to_peripheral_bridge_response");
@@ -177,10 +179,10 @@ int CheckInterrupt(int data)
 	uint32_t status;
 	uint32_t errorStatus;
 	uint8_t interruptLine =0;
-	ack = ReadWriteSDHCRegisters(0,3,(SD_Base + nintrstatusen),data);//Writing into the normal status enable register
+	ack = ReadWriteSDHCRegisters(0,3,(SD_Base + NormalInterruptStatusEnable),data);//Writing into the normal status enable register
 	ack = ReadWriteSDHCRegisters(0,3,(SD_Base + nintrsignalen),data);//Writing into the normal signal enable register
 	//Enable error interrupt too
-    	ack = ReadWriteSDHCRegisters(0,3,(SD_Base + eintrstatusen),0xffff);//Writing to error interrupt status enable register
+    	ack = ReadWriteSDHCRegisters(0,3,(SD_Base + ErrorInterruptStatusEnable),0xffff);//Writing to error interrupt status enable register
     	ack = ReadWriteSDHCRegisters(0,3,(SD_Base + eintrsignalen),0xffff);//Writing to error interrupt signal enable register
 	//Checking the interrupt line
 	while(1){
@@ -189,15 +191,15 @@ int CheckInterrupt(int data)
 		if ( flag ==  1)
 			break;
 	}
-	status = ReadWriteSDHCRegisters(1,3,(SD_Base + nintrstatus),0);//Reading from the normal interrupt status register
+	status = ReadWriteSDHCRegisters(1,3,(SD_Base + NormalInterruptStatus),0);//Reading from the normal interrupt status register
 	//Check whether there is any error interrupt bit set or not
 	//By checking bit-15 of the status
 	errorBitCheck = (status >> 15);
 	if( errorBitCheck == 1)
 	{
-    		errorStatus = ReadWriteSDHCRegisters(1,3,(SD_Base + eintrstatus),0);//Reding from error interrupt status register
+    		errorStatus = ReadWriteSDHCRegisters(1,3,(SD_Base + ErrorInterruptStatus),0);//Reding from error interrupt status register
     		fprintf(stderr,"Error Interrupt status is %d",errorStatus);
-    		ack = ReadWriteSDHCRegisters(0,3,(SD_Base + eintrstatus),0xffff);//Clearing error interrupt status
+    		ack = ReadWriteSDHCRegisters(0,3,(SD_Base + ErrorInterruptStatus),0xffff);//Clearing error interrupt status
 	}
 	// Interrrupt status is printed here
 	fprintf(stderr,"Normal Interrupt status is %d",status);
@@ -207,7 +209,7 @@ int CheckInterrupt(int data)
 // i parameter 1 for UHS Initialization
 int Initialization(int i)
 {
-//Series of commands are generated to initialise it to operate in 3.3V level
+//Series of Commands are generated to initialise it to operate in 3.3V level
 //Max allowable data rate is 25MHz.
         int Resp=0,busy=0,a;
         int Card_Is_Locked=0;
@@ -260,7 +262,7 @@ int Initialization(int i)
         a = checkDATline();
         while(a!=0)
         {
-                a = checkDATline();//check until busy bit is present in data line.
+                a = checkDATline();//check until busy bit is PresentState in data line.
         }
 	       //Check CARD_IS_LOCKED bit in Response
         Card_Is_Locked = (Resp & 0x02000000)>>25;
@@ -274,7 +276,7 @@ int Initialization(int i)
         SendACMD(6);
         Resp = GetResponseFromSDHC();
         //Data Transfer width to 1 (4-bit mode) in Host control 1 register
-        Add = SD_Base + hostcontrol;
+        Add = SD_Base + HostControl;
         SendRequestToSDHC(0,1,Add,2);
 }
 
