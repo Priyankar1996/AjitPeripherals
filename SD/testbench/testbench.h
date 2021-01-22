@@ -60,3 +60,19 @@ void SendACMD(int n);
 /* Sends Application Specific Command to SDCard. 
         VARIABLE          PURPOSE
            n         Sends App.Command ID */
+
+int BlockWrite(int bsize, int bcount);
+/* Function to write singla and multiple blocks.
+        VARIABLE           PURPOSE
+         bsize          Sets the size of
+                        individual blocks
+         bcount         Provides the number
+                        of blocks to be written*/
+
+int BlockRead(int bsize, int bcount);
+/* Function to read singla and multiple blocks.
+        VARIABLE           PURPOSE
+         bsize          Sets the size of
+                        individual blocks
+         bcount         Provides the number
+                        of blocks to be read*/
