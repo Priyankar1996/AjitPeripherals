@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
                 }
         }
         //SDHC thread is started
-        //startSdhcThreads();
+        startSdhcThreads();
 
         err = Initialization();
 
@@ -494,6 +494,7 @@ int BlockWrite(int bsize, int bcount)
 	else
 	{
 		//Pre-erased
+		//Sets the number of write blocks to be pre-erased before writing.
 		SendCMD(55);
 		response = ReadWriteSDHCRegisters(1,0, (SDBase + Response0),0);
 		SendACMD(23);
@@ -518,7 +519,7 @@ int BlockWrite(int bsize, int bcount)
 	}
 	CheckInterrupt(0x2);
         ack = ReadWriteSDHCRegisters(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear the interrupt
-	SendCMD(15);
+	SendCMD(15);  //sends the card into inactive state
 	response = ReadWriteSDHCRegisters(1,0,(SDBase + Response0),0);
 	return flag ;
 }
