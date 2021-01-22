@@ -213,7 +213,7 @@ void SendCMD(int n)
 void SendACMD(int n)
 {
         int data;
-        int cmd;//For generating Command register value
+        int cmd,ack;//For generating Command register value
 	switch(n)
 	{
 		case 6: data =0x2;
@@ -310,7 +310,7 @@ int Initialization()
         fprintf(stderr, " Base Clock Frequency For SD Clock is %d \n", ((readData >> 8) & 0xff));
         voltageSupport = (readData >> 24) & 0x7; //supported voltages
         sdclkFreq = (readData >> 8);//SD clock frequency set to base frequency 
-	data =(sdclk_freq<<6) | 1 ;
+	data =(sdclkFreq << 6) | 1 ;
         ack = ReadWriteSDHCRegisters(0,3,(SDBase + ClockControl),data);//Internal clock enable and SDCLK frequency select
         readData = ReadWriteSDHCRegisters(1,3,(SDBase + ClockControl),0);
         while( ((readData >>1)&1) !=1)
@@ -434,4 +434,91 @@ int Initialization()
 	return flag;
 }
 
+int BlockRead(int bsize, int bcount)
+{
+	//Sets up the SD Card to read data from the flash.
+	//Supports single and multiple BlockWrite.
+	int flag =0,i;
+	int response,ack;
+	int blockData;
+	//Set Block Size 
+        ack = ReadWriteSDHCRegisters(0,3,(SDBase + BlockSize),bsize);
+	//Set Block Count
+        ack = ReadWriteSDHCRegisters(0,3,(SDBase + BlockCount),bcount);
+	if (bcount ==1)
+		SendCMD(17);
+	else
+		SendCMD(18);
+        response = ReadWriteSDHCRegisters(1,0,(SDBase + Response0),0);
+	//Wait for Buffer Read Ready Interrupt
+	while(bcount!=0)
+	{
+		CheckInterrupt(0x20);
+		fprintf(stderr,"Buffer Read Ready Interrupt occured,ready to write buffer");
+		ack = ReadWriteSDHCRegisters(0, 3, (SDBase + NormalInterruptStatus), 0x20);
+		fprintf(stderr,"Buffer Read Ready Interrupt cleared,wait for interrupt to occur");
+		//Get Block Data
+		for(i=0; i< 128; i++)
+		{
+                        blockData = ReadWriteSDHCRegisters(1,0,(SDBase + BufferData),0);
+			fprintf(stderr," Blockdata[%d] %d", i, blockData);
+			if(blockData != i)
+			{
+				fprintf(stderr,"Error ..Expected = %d , Actual =%d ", i, blockData);
+				flag =1;
+			}
+		}
+		bcount--;
+	}
+        CheckInterrupt(0x2);
+        ack = ReadWriteSDHCRegisters(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear the interrupt
+        SendCMD(15);
+        response = ReadWriteSDHCRegisters(1,0,(SDBase + Response0),0);
+        return flag;
+}
 
+int BlockWrite(int bsize, int bcount)
+{
+//Sets up the SD Card to write data into the flash.
+//Supports single and multiple BlockWrite.
+	int flag = 0,i,ack;
+        int blockData;
+	int response;
+	addressd= 0;
+        //Set Block Size 
+        ack = ReadWriteSDHCRegisters(0,3,(SDBase + BlockSize),bsize);
+	//Set Block Count
+        ack = ReadWriteSDHCRegisters(0,3,(SDBase + BlockCount),bcount);
+	if (bcount ==1)
+		SendCMD(24);
+	else
+	{
+		//Pre-erased
+		SendCMD(55);
+		response = ReadWriteSDHCRegisters(1,0, (SDBase + Response0),0);
+		SendACMD(23);
+                response = ReadWriteSDHCRegisters(1,0, (SDBase + Response0),0);
+		SendCMD(25);
+	}
+	response = ReadWriteSDHCRegisters(1,0,(SDBase + Response0),0);
+	//Wait for Buffer Write Ready Interrupt
+	while(bcount!=0)
+	{
+		CheckInterrupt(0x10);		
+		fprintf(stderr,"Buffer Write Ready Interrupt occured,ready to write buffer");
+                ack = ReadWriteSDHCRegisters(0,3, (SDBase + NormalInterruptStatus), 0x10);
+		fprintf(stderr,"Buffer Write Ready Interrupt cleared,wait for interrupt to occur");
+		//Set block data
+		for(i=0; i<128 ; i++)
+		{
+			blockData = i;
+                        ack = ReadWriteSDHCRegisters(0,3,(SDBase + BufferData),blockData);
+		}
+		bcount--;
+	}
+	CheckInterrupt(0x2);
+        ack = ReadWriteSDHCRegisters(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear the interrupt
+	SendCMD(15);
+	response = ReadWriteSDHCRegisters(1,0,(SDBase + Response0),0);
+	return flag ;
+}
