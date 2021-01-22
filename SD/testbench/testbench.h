@@ -44,7 +44,7 @@ void CheckInterrupt(int data);
    bits in the 'InterruptStatusEnable' and 
    'InterruptSignaLEnable' Registers are asserted to 1. */                  
 
-int Initialization(int i);
+int Initialization();
 /* Initialises the SD card*/
 
 int tuning();
