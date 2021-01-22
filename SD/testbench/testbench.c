@@ -1,27 +1,3 @@
-//main ()
-//{
-//
-//
-//      initialization(0)//for normal initialization
-//      blockwrite()
-//      blockread()
-//
-//      SoftwareReset()xx
-//      initialization(1)//for UHS initialization
-//      blockwrite()
-//      blockread()
-//
-//      }
-//
-//      readwriteSdhcRegisters()
-//      SendCMD(parameter for ACMD)
-//      SendACMD()xxxx
-//      checkInterrupt()
-//      interrupt_check() xxxx
-//      clear_interrupt xxxxx
-//      casefunc() xxxxx
-//      checkDATline()
-//
 /*TESTBENCH FOR SD HOST CONTROLLER
   Authors: Arghya Kamal Dey, Priyankar Sarkar,Ajinkya Raghuwanshi,Deval Patel.
   Date: December,2020.
@@ -36,34 +12,7 @@
 #include <pipeHandler.h>
 #include <stdbool.h>
 #include <time.h>
-
-//List of registers to be used.
-#define BlockSize 0x04
-#define BlockCount 0x06
-#define Arguement 0x08
-#define Transfer 0x0c
-#define Command 0x0e
-#define Response0 0x10
-#define Response2 0x14
-#define Response4 0x18
-#define Response6 0x1c
-#define BufferData 0x20
-#define PresentState 0x24
-#define HostControl 0x28
-#define PowerControl 0x29
-#define ClockControl 0x2C
-#define SoftwareReset 0x2F
-#define NormalInterruptStatus 0x30
-#define ErrorInterruptStatus 0x32
-#define NormalInterruptStatusEnable 0x34
-#define ErrorInterruptStatusEnable 0x36
-#define NormalInterruptSignalEnable 0x38
-#define ErrorInterruptSignalEnable 0x3A
-#define AutoCmdError 0x3C
-#define HostControl2 0x3E
-#define Capabilities 0x40
-
-#define SDBase 0xffff3300 //SD base address
+#include "testbench.h"
 
 int OCR, RCA = 0, addressd;
 
@@ -99,38 +48,8 @@ int main(int argc, char *argv[])
         //SDHC thread is started
         startSdhcThreads();
 
-        //Whether card is inserted is checked
-        //card insertion and removal status enable
-        //card insertion and removal signal enable
-        CheckInterrupt(0xc0);
-        //clear the insertion interrupt
-        ack = ReadWriteSDHCRegisters(0, 3, (SDBase + NormalInterruptStatus), 0x40);
-        //PresentState state -> card inserted check
-        readData = ReadWriteSDHCRegisters(1, 0, (SDBase + PresentState), 0);
-        if (((readData >> 16) & 1) != 1)
-        {
-                fprintf(stderr, "Card not Present\n ");
-                return (1);
-        }
-        //software reset
-        ack = ReadWriteSDHCRegisters(0, 1, (SDBase + SoftwareReset), 1);
-        readData = ReadWriteSDHCRegisters(1, 0, (SDBase + Capabilities), 0); //reading Capabilitiesbilities register
-        fprintf(stderr, " Capabilitiesbilities reg = %d \n", readData);
-        fprintf(stderr, " Base Clock Frequency For SD Clock is %d \n", ((readData >> 8) & 0xff));
-        voltageSupport = (readData >> 24) & 0x7; //supported voltages
+        err = Initialization();
 
-        if (atoi(argv[2]) == 0)
-        {
-                sdclkFreq = (readData >> 8) / 50;
-                SDclock_PowerControl(sdclkFreq, voltageSupport); //clock and power control done
-                err = Initialization(0);
-        }
-        else
-        {
-                sdclkFreq = (readData >> 8);
-                SDclock_PowerControl(sdclkFreq, voltageSupport); //clock and power control done
-                err = Initialization(1);
-        }
         if (err)
                 fprintf(stderr, "Error in Initialization");
         else
@@ -170,7 +89,6 @@ int ReadWriteSDHCRegisters(long int rwbar, long int bytemask, long int phyAdd, i
         return returnData;
 }
 
-
 //This function is used for checking the interrupts
 //The data shows which interrupt to enable
 void CheckInterrupt(int data)
@@ -207,19 +125,208 @@ void CheckInterrupt(int data)
         // Interrrupt status is printed here
         fprintf(stderr, "Normal Interrupt status is %d\n", status);
 }
-// paramater i = 0 for Initialization
-// parameter i = 1 for UHS Initialization
-int Initialization(int i)
+
+void SendCMD(int n)
 {
-        //Series of Commands are generated to initialise it to operate in 3.3V level
-        //Max allowable data rate is 25MHz.
+    //Check Command Inhibit(CMD)
+    int presentState,data;
+    int ack;
+    int cmd; // Generating command index
+    presentState = ReadWriteSDHCRegisters(1,0,(SDBase + PresentState),0);
+    while( (presentState & 0x1) == 1)//command_inhibit(CMD)
+	presentState = ReadWriteSDHCRegisters(1,0,(SDBase + PresentState),0);
+    while( (presentState & 0x2) == 1)//command_inhibit(DAT)
+        presentState = ReadWriteSDHCRegisters(1,0,(SDBase + PresentState),0);      
+    switch(n)//For finding the value to be stored in Argument Register
+    {
+		case 0: data = 0;
+			break;
+		case 2: data = 0;
+                      	break;
+		case 3: data = 0;
+                       	break;
+		case 6:	data=0x80000000;
+                        break;
+		case 7: data= RCA ;//[31:16]RCA
+                        break;
+                case 8: data = 0x1AA;
+                	break;
+		case 11:data=0;
+			break;
+                case 15:data= RCA;//[31:16]RCA
+                        break;
+		case 17:data=addressd;//data address SDSC cards use byte unit address
+				//SDHC and SDXC use block unit address(512 bytes unit)
+				//read
+                	break;
+		case 18: data = addressd;
+			break;
+		case 19:data=0;
+			break;
+		case 24:data=addressd;//data address
+				//write
+                	break;
+		case 25: data = addressd;
+			break;
+                case 42: data = 0;
+                        break;
+		case 55:data= RCA ;	//[31:16]RCA
+			break;
+		default:data=0;
+	}
+        ack = ReadWriteSDHCRegisters(0,0,(SDBase + Arguement),data);//Write the Argument register
+        if ( (n == 17) || (n ==18) || (n==24) || (n==25))//Write into the Transfer register
+        {
+                if (n==17)
+		        data = 8;
+	        else if ( n== 18)
+		        data = 24;
+	        else if (n ==24 )
+		        data = 0;
+	        else if (n ==25)
+		        data = 16;
+	        else 
+		        data =0;	
+                ack = ReadWriteSDHCRegisters(0,3,(SDBase + Transfer),data);
+        }
+        //Generate Command register values... Divided in terms type of response expected
+	if( (n == 0)|| (n==4) ||(n==15))//No response
+                cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|0;
+        else if((n==2)||(n==9)||(n==10))//Response generated is R2.
+                cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
+        else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24)||(n==25))
+        //Response generated is of the type R1/R7/R6.
+        {
+                if((n==17)||(n==24)||(n==25))
+                        cmd = (n<<8)|(0<<6)|(1<<5)|(1<<4)|(1<<3)|(0<<2)|2;
+                else
+                        cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
+        }
+        else//Response Type R1b, R5b
+        {
+                cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
+        }
+        ack = ReadWriteSDHCRegisters(0,3,(SDBase + Command),cmd);//Write into Command register
+        CheckInterrupt(0x1);//Checking Command Complete Interrupt			
+        ack = ReadWriteSDHCRegisters(0, 3, (SDBase + NormalInterruptStatus), 0x1);//Clear Command Complete Interrupt
+}
+void SendACMD(int n)
+{
+        int data;
+        int cmd;//For generating Command register value
+	switch(n)
+	{
+		case 6: data =0x2;
+			break;
+		case 23: data = 65535;
+			break;
+		case 411:data = 0;
+                 	break;
+		case 412:data = (1<<30) | (1<<28) | (1<<24) | OCR;
+		//HCS = 1(High capacity support); XPC =1(maximum performance); S18R =1 (Switching to 1.8V)
+			break;
+		default:data =0;
+	}
+	ack = ReadWriteSDHCRegisters(0,0,(SDBase + Arguement),data);//Write the Argument register
+        //Generate Command register values... Divided in terms type of response expected
+        if ((n == 411) || (n == 412)) //Response generated is R3.
+        {
+                n=41;
+                cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|(0<<2)|2;
+        }
+        else if(n == 6)
+        //Response generated is of the type R1.
+                cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
+        else//Response Type R1b, R5b
+                cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
+        ack = ReadWriteSDHCRegisters(0,3,(SDBase + Command),cmd);//Write into Command register
+        CheckInterrupt(0x1);//Checking Command Complete Interrupt			
+        ack = ReadWriteSDHCRegisters(0, 3, (SDBase + NormalInterruptStatus), 0x1);//Clear Command Complete interrupt
+}
+//For high clock speeds, tuning of the block is necessary.
+//This function generates tuning blocks.
+int tuning()
+{
+	int response=0,count=40;
+        int executeTuning;
+        int samplingClockSelect;
+        int ack ;
+        int readTuningData;
+	ack = ReadWriteSDHCRegisters(0,3,(SDBase + HostControl2),0x40);//Set Execute Tuning to 1
+	while(count!=0)
+	{	
+		//Send CMD19
+		SendCMD(19);
+		response = ReadWriteSDHCRegisters(1, 0, (SDBase + Response0), 0);
+		//Check for Buffer Read Ready
+		CheckInterrupt(0x20);
+		//Clear Buffer Read Ready
+		ack = ReadWriteSDHCRegisters(0, 3, (SDBase + NormalInterruptStatus), 0x20);
+		//execute tuning read
+		readTuningData = ReadWriteSDHCRegisters(1,3,(SDBase + HostControl2),0);
+		executeTuning = (readTuningData & 0x40)>>6;
+		if(executeTuning==0)
+			break;
+		else
+			count--;
+	}
+	samplingClockSelect= (readTuningData & 0x80)>>7;
+	if(samplingClockSelect==1)
+		return 0;
+	else
+		return 1;
+}
+//Series of Commands are generated to initialise the SD card
+int Initialization()
+{ 
         int response = 0;
         int r0,r2,r4,r6;
-        int busy = 0, a;
+        int readData;
+        int data;
+        int voltageSupport;
+        int sdclkFreq;
+        int busy = 0;
         int cardIsLocked = 0;
         int flag = 0;
         int ack;
         int ccs;//card capacity status
+        //Whether card is inserted is checked
+        //card insertion and removal status enable
+        //card insertion and removal signal enable
+        CheckInterrupt(0xc0);
+        //clear the insertion interrupt
+        ack = ReadWriteSDHCRegisters(0, 3, (SDBase + NormalInterruptStatus), 0x40);
+        //PresentState state -> card inserted check
+        readData = ReadWriteSDHCRegisters(1, 0, (SDBase + PresentState), 0);
+        if (((readData >> 16) & 1) != 1)
+        {
+                fprintf(stderr, "Card not Present\n ");
+                return (1);
+        }
+        //software reset
+        ack = ReadWriteSDHCRegisters(0, 1, (SDBase + SoftwareReset), 1);
+        readData = ReadWriteSDHCRegisters(1, 0, (SDBase + Capabilities), 0); //reading Capabilitiesbilities register
+        fprintf(stderr, " Capabilitiesbilities reg = %d \n", readData);
+        fprintf(stderr, " Base Clock Frequency For SD Clock is %d \n", ((readData >> 8) & 0xff));
+        voltageSupport = (readData >> 24) & 0x7; //supported voltages
+        sdclkFreq = (readData >> 8);//SD clock frequency set to base frequency 
+	data =(sdclk_freq<<6) | 1 ;
+        ack = ReadWriteSDHCRegisters(0,3,(SDBase + ClockControl),data);//Internal clock enable and SDCLK frequency select
+        readData = ReadWriteSDHCRegisters(1,3,(SDBase + ClockControl),0);
+        while( ((readData >>1)&1) !=1)
+        {
+               readData = ReadWriteSDHCRegisters(1,3,(SDBase + ClockControl),0);
+        }//Run until Internal Clock Stable
+
+        //SD clock Enable
+        ack = ReadWriteSDHCRegisters(0,3,(SDBase + ClockControl),4);
+         //SD bus Power control
+        if((voltageSupport >>2))
+                data = 0xb;//1.8V power
+        else
+                data = 0xf;//3.3V power
+        ack = ReadWriteSDHCRegisters(0,1, (SDBase + PowerControl),data);
+
         SendCMD(0);
         SendCMD(8);
         response = ReadWriteSDHCRegisters(1, 0, (SDBase + Response0), 0);
@@ -326,4 +433,5 @@ int Initialization(int i)
         flag = tuning ();
 	return flag;
 }
+
 
