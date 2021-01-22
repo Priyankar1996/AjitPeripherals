@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
                 }
         }
         //SDHC thread is started
-        //startSdhcThreads();
+        startSdhcThreads();
 
         err = Initialization();
 
