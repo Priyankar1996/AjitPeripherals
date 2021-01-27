@@ -1,4 +1,4 @@
-// LIST OF REGISTERS TO BE USED
+/************************** Constant Definitions *****************************/
 #define BlockSize 0x04
 #define BlockCount 0x06
 #define Arguement 0x08
@@ -26,53 +26,75 @@
 
 #define SDBase 0xffff3300 // SD Base Address.
 
-int ReadWriteSDHCRegisters(long int rwbar, long int bytemask, long int phyAdd, int data);
-/* Performs read/write operations on SDHC Registers
-        VARIABLES           PURPOSE
-          rwbar          Write=0,Read=1
-         bytemask     Masks the byte if unused.
-          phyAdd       Points to the location 
-                        of the register file.
-           data       Stores the data to be written
-                        into the registers.*/ 
+
+/******************************* Function Prototypes **********************************/
+int ReadWriteSDHCRegister(long int rwbar, long int bytemask, long int phyAdd, int data);
+// Performs read/write operations on SDHC Register Set.
+//
+// Returns 0 as acknowledgement if write operation is performed on any 
+// of the register else returns the data in case of read operation.
+//
+//        VARIABLES           PURPOSE
+//          rwbar          Write=0,Read=1
+//         bytemask     Masks the byte if unused.
+//          phyAdd       Points to the location 
+//                        of the register file.
+//           data       Stores the data to be written
+//                        into the register. 
          
 
-void CheckInterrupt(int data);
-/* Checks the 'SDHC_to_IRC_INT' line. 
+void EnableInterruptStatusRegistersAndCheckInterruptLine(int data);
+//   Interrupts are set when the corresponding 
+//   bits in the 'InterruptStatusEnable' and 
+//   'InterruptSignaLEnable' Registers are asserted 
+//   to 1.                  
+//
+//   Checks the 'SDHC_to_IRC_INT' line and print its 
+//   corresponding status.
+//
+//        VARIABLES             PURPOSE
+//          data               
 
-   Interrupts are set when the corresponding 
-   bits in the 'InterruptStatusEnable' and 
-   'InterruptSignaLEnable' Registers are asserted to 1. */                  
+int ExecuteInitializationSequence();
+//   Sends a sequence of commands required to initialize
+//   the SD Card.
+//
+//   Returns 0 if no error is encountered throughout the
+//   process else 1.
 
-int Initialization();
-/* Initialises the SD card*/
+int PerformTuningSequence();
+//   Sends the 'execute tuning command' for 40 times
+//   until the card is tuned to the Sampling 
+//   Clock Edges. 
+//
+//   Returns 0 if sampling point is obtained else 1. 
 
-int tuning();
-/* Provides a tuning block pattern for UHS modes
-   (UHS50 and UHS104 only)*/
-
-void SendCMD(int n);
-/* Sends General Command to SDcard.
-      VARIABLE     PURPOSE
-        n       Sends CommandID */       
+void SendGeneralCommand(int n);
+// Sends General Command to SDcard.
+//
+//      VARIABLE     PURPOSE
+//        n       Sends General
+//                  CommandID       
                 
-void SendACMD(int n);
-/* Sends Application Specific Command to SDCard. 
-        VARIABLE          PURPOSE
-           n         Sends App.Command ID */
+void SendApplicationSpecificCommand(int n);
+// Sends Application Specific Command to SDCard. 
+//
+//        VARIABLE          PURPOSE
+//           n         Sends Application
+//                    Specific Command ID
 
-int BlockWrite(int bsize, int bcount);
-/* Function to write singla and multiple blocks.
-        VARIABLE           PURPOSE
-         bsize          Sets the size of
-                        individual blocks
-         bcount         Provides the number
-                        of blocks to be written*/
+int WriteSingleOrMultiple512BytesBlock(int bsize, int bcount);
+// Function to write single and multiple blocks of 512bytes.
+//        VARIABLE           PURPOSE
+//         bsize          Sets the size of
+//                        individual blocks
+//         bcount         Provides the number
+//                        of blocks to be written
 
-int BlockRead(int bsize, int bcount);
-/* Function to read singla and multiple blocks.
-        VARIABLE           PURPOSE
-         bsize          Sets the size of
-                        individual blocks
-         bcount         Provides the number
-                        of blocks to be read*/
+int ReadSingleOrMultiple512BytesBlock(int bsize, int bcount);
+// Function to read single and multiple blocks of 512bytes.
+//        VARIABLE           PURPOSE
+//         bsize          Sets the size of
+//                        individual blocks
+//         bcount         Provides the number
+//                        of blocks to be read
