@@ -13,9 +13,9 @@
 #include <stdbool.h>
 #include <time.h>
 #include "testbench.h"
-
-int OCR, RCA = 0, addressd;
-
+/************Global Variables**************/
+int OCR, RCA = 0, writeAddress;
+/******************************************/
 // Main function
 // Check if Card is inserted
 // Software reset
@@ -32,7 +32,9 @@ int main(int argc, char *argv[])
         int readData;
         int sdclkFreq;
         int voltageSupport;
-
+        int writeArray[FixedBlockSize];
+        int writeMultipleBlockArray[FixedBlockSize * MaxBlockCount];
+        long int i;
         FILE *fp = NULL;
         if (strcmp(argv[1], "stdout") == 0)
                 fp = stdout;
@@ -47,23 +49,39 @@ int main(int argc, char *argv[])
         }
         //SDHC thread is started
         //startSdhcThreads();
-
         err = ExecuteInitializationSequence();
-
         if (err)
                 fprintf(stderr, "Error in Initialization");
         else
                 fprintf(stderr, "Succesfully Initialized");
-
-        //Blockwrite with 512 bytes block size and 2^31 block count
-        err = WriteSingleOrMultiple512BytesBlock(512, 65535);
+        //initialize the write array...every 32 bit of the block is incremented by 1 for march test
+        for(i = 0; i< FixedBlockSize ;i++)
+                writeArray[i] =(int) i;
+        //Blockwrite with 512 bytes block size and single block count        
+        err = WriteSingleOrMultiple512BytesBlock(1, writeArray);
         if (err)
-                fprintf(stderr, "Error in Block Write");
-
+                fprintf(stderr, "Error in Single Block Write");
+        //Blockread with 512 bytes block size and single block read
+        err = ReadSingleOrMultiple512BytesBlock(1);
+        if (err)
+                fprintf(stderr, " Error in Single Block Read");
+        return 0;
+        //initialize the write multiple block array... every block value is incremented by 1 for march test
+        for(i = 0; i< (FixedBlockSize * MaxBlockCount ); i++)
+        {
+                if(i%FixedBlockSize == 0)
+                        writeMultipleBlockArray[i] = (int) i;
+                else
+                        writeMultipleBlockArray[i] = 0;
+        }
+        //Blockwrite with 512 bytes block size and 2^16-1 block count which is maximum
+        err = WriteSingleOrMultiple512BytesBlock(MaxBlockCount, writeMultipleBlockArray);
+        if (err)
+                fprintf(stderr, "Error in Multiple Block Write");
         //Blockread with 512 bytes block size
-        err = ReadSingleOrMultiple512BytesBlock(512, 65535);
+        err = ReadSingleOrMultiple512BytesBlock(MaxBlockCount);
         if (err)
-                fprintf(stderr, " Error in Block Read");
+                fprintf(stderr, " Error in Multiple Block Read");
         return 0;
 }
 
@@ -132,9 +150,9 @@ void SendGeneralCommand(int n)
     int ack;
     int cmd; // Generating command index
     presentState = ReadWriteSDHCRegister(1,0,(SDBase + PresentState),0);
-    while( (presentState & 0x1) == 1)//command_inhibit(CMD)
+    while( (presentState & 0x1) == 1)//command_inhibit(CMD) (to check whether command line is busy or not)
 	presentState = ReadWriteSDHCRegister(1,0,(SDBase + PresentState),0);
-    while( (presentState & 0x2) == 1)//command_inhibit(DAT)
+    while( (presentState & 0x2) == 2)//command_inhibit(DAT) (to check whether DAT lines are busy or not)
         presentState = ReadWriteSDHCRegister(1,0,(SDBase + PresentState),0);      
     switch(n)//For finding the value to be stored in Argument Register
     {
@@ -154,18 +172,17 @@ void SendGeneralCommand(int n)
 			break;
                 case 15:data= RCA;//[31:16]RCA
                         break;
-		case 17:data=addressd;//data address SDSC cards use byte unit address
+		case 17:data=writeAddress;//data address SDSC cards use byte unit address
 				//SDHC and SDXC use block unit address(512 bytes unit)
 				//read
                 	break;
-		case 18: data = addressd;
+		case 18: data = writeAddress;
 			break;
 		case 19:data=0;
 			break;
-		case 24:data=addressd;//data address
-				//write
+		case 24:data=writeAddress;//data address for wite
                 	break;
-		case 25: data = addressd;
+		case 25: data = writeAddress;//data address for write
 			break;
                 case 42: data = 0;
                         break;
@@ -183,7 +200,7 @@ void SendGeneralCommand(int n)
 	        else if (n ==24 )
 		        data = 0;
 	        else if (n ==25)
-		        data = 16;
+		        data = 18;
 	        else 
 		        data =0;	
                 ack = ReadWriteSDHCRegister(0,3,(SDBase + Transfer),data);
@@ -193,10 +210,10 @@ void SendGeneralCommand(int n)
                 cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(0<<3)|0;
         else if((n==2)||(n==9)||(n==10))//Response generated is R2.
                 cmd = (n<<8)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(0<<2)|1;
-        else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==19)||(n==24)||(n==25))
+        else if((n == 55)||(n == 3)||(n==8)||(n==17)||(n==18)||(n==19)||(n==24)||(n==25))
         //Response generated is of the type R1/R7/R6.
         {
-                if((n==17)||(n==24)||(n==25))
+                if((n==17)||(n==18)||(n==24)||(n==25))
                         cmd = (n<<8)|(0<<6)|(1<<5)|(1<<4)|(1<<3)|(0<<2)|2;
                 else
                         cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
@@ -302,10 +319,10 @@ int ExecuteInitializationSequence()
                 fprintf(stderr, "Card not Present\n ");
                 return (1);
         }
-        //software reset
-        ack = ReadWriteSDHCRegister(0, 1, (SDBase + SoftwareReset), 1);
         //reading Capabilities register
-        readData = ReadWriteSDHCRegister(1, 0, (SDBase + Capabilities), 0); 
+        readData = ReadWriteSDHCRegister(1, 0, (SDBase + Capabilities), 0);
+	//software reset asserted
+        ack = ReadWriteSDHCRegister(0, 1, (SDBase + SoftwareReset), 1);
         fprintf(stderr, " Capabilitiesbilities reg = %d \n", readData);
         fprintf(stderr, " Base Clock Frequency For SD Clock is %d \n", ((readData >> 8) & 0xff));
         voltageSupport = (readData >> 24) & 0x7; //supported voltages
@@ -326,7 +343,8 @@ int ExecuteInitializationSequence()
         else
                 data = 0xf;//3.3V power
         ack = ReadWriteSDHCRegister(0,1, (SDBase + PowerControl),data);
-
+	//software reset deasserted	
+        ack = ReadWriteSDHCRegister(0, 1, (SDBase + SoftwareReset), 0);
         SendGeneralCommand(0);
         SendGeneralCommand(8);
         response = ReadWriteSDHCRegister(1, 0, (SDBase + Response0), 0);
@@ -433,65 +451,72 @@ int ExecuteInitializationSequence()
         flag = PerformTuningSequence ();
 	return flag;
 }
-
-
-int ReadSingleOrMultiple512BytesBlock(int bsize, int bcount)
+//Sets up the SD Card to read data from the flash.
+//Supports single and multiple BlockWrite.
+//And Checks the data read to confirm march test
+int ReadSingleOrMultiple512BytesBlock(int blockCount)
 {
-	//Sets up the SD Card to read data from the flash.
-	//Supports single and multiple BlockWrite.
-	int flag =0,i;
+	
+	int flag =0;
 	int response,ack;
 	int blockData;
-	//Set Block Size 
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + BlockSize),bsize);
-	//Set Block Count
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + BlockCount),bcount);
-	if (bcount ==1)
+        int count = blockCount;
+        long int i;
+	//Set Block Size to 512 bytes
+        ack = ReadWriteSDHCRegister(0,3,(SDBase + FixedBlockSize),512);
+	//Set Block Count to maximum value possible (65535)
+        ack = ReadWriteSDHCRegister(0,3,(SDBase + BlockCount),blockCount);
+	if (blockCount ==1)
 		SendGeneralCommand(17);
 	else
 		SendGeneralCommand(18);
         response = ReadWriteSDHCRegister(1,0,(SDBase + Response0),0);
 	//Wait for Buffer Read Ready Interrupt
-	while(bcount!=0)
+	while(count!=0)
 	{
 		EnableInterruptStatusRegistersAndCheckInterruptLine(0x20);
-		fprintf(stderr,"Buffer Read Ready Interrupt occured,ready to write buffer");
+		fprintf(stderr,"Buffer Read Ready Interrupt occured,ready to write buffer\n");
 		ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x20);
-		fprintf(stderr,"Buffer Read Ready Interrupt cleared,wait for interrupt to occur");
+		fprintf(stderr,"Buffer Read Ready Interrupt cleared,wait for interrupt to occur\n");
 		//Get Block Data
-		for(i=0; i< 128; i++)
+		for(i=0; i< (FixedBlockSize * blockCount); i++)
 		{
-                        blockData = ReadWriteSDHCRegister(1,0,(SDBase + BufferData),0);
-			fprintf(stderr," Blockdata[%d] %d", i, blockData);
-			if(blockData != i)
+                        blockData = ReadWriteSDHCRegister(1,0,(SDBase + BufferDataPort),0);
+			fprintf(stderr," Blockdata[%d] %d\n", i, blockData);
+			if((blockCount ==1) && (blockData != i))
 			{
-				fprintf(stderr,"Error ..Expected = %d , Actual =%d ", i, blockData);
+				fprintf(stderr,"Error: Expected = %d , Actual =%d \n", i, blockData);
 				flag =1;
 			}
+                        else if ((blockCount !=1) && (i % FixedBlockSize == 0) && (blockData != (i / FixedBlockSize)))
+                        {
+                                fprintf(stderr," Error: Expected = %d, Actual = %d\n", (i/FixedBlockSize),blockData);
+                                flag =1;
+                        }
 		}
-		bcount--;
+		count--;
 	}
-        EnableInterruptStatusRegistersAndCheckInterruptLine(0x2);
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear the interrupt
+        EnableInterruptStatusRegistersAndCheckInterruptLine(0x2);//Wait for transfer complete interrupt
+        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear transfer complete interrupt
         SendGeneralCommand(15);
         response = ReadWriteSDHCRegister(1,0,(SDBase + Response0),0);
         return flag;
 }
-
-
-int WriteSingleOrMultiple512BytesBlock(int bsize, int bcount)
-{
 //Sets up the SD Card to write data into the flash.
 //Supports single and multiple BlockWrite.
-	int flag = 0,i,ack;
+int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData)
+{
+	int flag = 0,ack;
         int blockData;
 	int response;
-	addressd= 0;
-        //Set Block Size 
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + BlockSize),bsize);
-	//Set Block Count
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + BlockCount),bcount);
-	if (bcount ==1)
+        int count = blockCount;
+	writeAddress= 0;
+        long int i ;
+        //Set Block Size to fixed 512 bytes
+        ack = ReadWriteSDHCRegister(0,3,(SDBase + FixedBlockSize),512);
+	//Set Block Count Register
+        ack = ReadWriteSDHCRegister(0,3,(SDBase + BlockCount),blockCount);
+	if (blockCount ==1)
 		SendGeneralCommand(24);
 	else
 	{
@@ -505,22 +530,19 @@ int WriteSingleOrMultiple512BytesBlock(int bsize, int bcount)
 	}
 	response = ReadWriteSDHCRegister(1,0,(SDBase + Response0),0);
 	//Wait for Buffer Write Ready Interrupt
-	while(bcount!=0)
+	while(count!=0)
 	{
 		EnableInterruptStatusRegistersAndCheckInterruptLine(0x10);		
-		fprintf(stderr,"Buffer Write Ready Interrupt occured,ready to write buffer");
-                ack = ReadWriteSDHCRegister(0,3, (SDBase + NormalInterruptStatus), 0x10);
-		fprintf(stderr,"Buffer Write Ready Interrupt cleared,wait for interrupt to occur");
+		fprintf(stderr,"Buffer Write Ready Interrupt occured,ready to write buffer\n");
+                ack = ReadWriteSDHCRegister(0,3, (SDBase + NormalInterruptStatus), 0x10);//clear Buffer write ready interrupt
+		fprintf(stderr,"Buffer Write Ready Interrupt cleared,wait for interrupt to occur\n");
 		//Set block data
-		for(i=0; i<128 ; i++)
-		{
-			blockData = i;
-                        ack = ReadWriteSDHCRegister(0,3,(SDBase + BufferData),blockData);
-		}
-		bcount--;
+		for(i=0; i< (FixedBlockSize * blockCount) ; i++)
+                        ack = ReadWriteSDHCRegister(0,3,(SDBase + BufferDataPort),writeData[i]);
+		count--;
 	}
-	EnableInterruptStatusRegistersAndCheckInterruptLine(0x2);
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear the interrupt
+	EnableInterruptStatusRegistersAndCheckInterruptLine(0x2);//Wait for Transfer complete Interrupt
+        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear the transfer complete interrupt
 	SendGeneralCommand(15);  //sends the card into inactive state
 	response = ReadWriteSDHCRegister(1,0,(SDBase + Response0),0);
 	return flag ;

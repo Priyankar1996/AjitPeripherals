@@ -8,7 +8,7 @@
 #define Response2 0x14
 #define Response4 0x18
 #define Response6 0x1c
-#define BufferData 0x20
+#define BufferDataPort 0x20
 #define PresentState 0x24
 #define HostControl 0x28
 #define PowerControl 0x29
@@ -25,16 +25,18 @@
 #define Capabilities 0x40
 
 #define SDBase 0xffff3300 // SD Base Address.
-
+#define FixedBlockSize 128 //Block size is fixed to 512 bytes equivalent to 128 no of 32bit int.
+#define MaxBlockCount 65535//Max value of Block Count 
 
 /******************************* Function Prototypes **********************************/
+/**************************************************************************************/
 int ReadWriteSDHCRegister(long int rwbar, long int bytemask, long int phyAdd, int data);
 // Performs read/write operations on SDHC Register Set.
 //
 // Returns 0 as acknowledgement if write operation is performed on any 
 // of the register else returns the data in case of read operation.
 //
-//        VARIABLES           PURPOSE
+//        PARAMETERS           PURPOSE
 //          rwbar          Write=0,Read=1
 //         bytemask     Masks the byte if unused.
 //          phyAdd       Points to the location 
@@ -52,8 +54,9 @@ void EnableInterruptStatusRegistersAndCheckInterruptLine(int data);
 //   Checks the 'SDHC_to_IRC_INT' line and print its 
 //   corresponding status.
 //
-//        VARIABLES             PURPOSE
-//          data               
+//        PARAMETER             PURPOSE
+//          data             It specifies the interrupt 
+//                              to be enabled       
 
 int ExecuteInitializationSequence();
 //   Sends a sequence of commands required to initialize
@@ -72,29 +75,33 @@ int PerformTuningSequence();
 void SendGeneralCommand(int n);
 // Sends General Command to SDcard.
 //
-//      VARIABLE     PURPOSE
+//      PARAMETER     PURPOSE
 //        n       Sends General
 //                  CommandID       
                 
 void SendApplicationSpecificCommand(int n);
 // Sends Application Specific Command to SDCard. 
 //
-//        VARIABLE          PURPOSE
+//        PARAMETER          PURPOSE
 //           n         Sends Application
 //                    Specific Command ID
 
-int WriteSingleOrMultiple512BytesBlock(int bsize, int bcount);
+int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData);
 // Function to write single and multiple blocks of 512bytes.
-//        VARIABLE           PURPOSE
-//         bsize          Sets the size of
-//                        individual blocks
-//         bcount         Provides the number
-//                        of blocks to be written
+//
+//         PARAMETER           PURPOSE
+//         blockCount         Provides the number
+//                          of blocks to be written
+//
+//    Returns 0 if blocks are written successfully otherwise 1
 
-int ReadSingleOrMultiple512BytesBlock(int bsize, int bcount);
+int ReadSingleOrMultiple512BytesBlock(int blockCount);
 // Function to read single and multiple blocks of 512bytes.
-//        VARIABLE           PURPOSE
-//         bsize          Sets the size of
-//                        individual blocks
-//         bcount         Provides the number
-//                        of blocks to be read
+//
+//         PARAMETER           PURPOSE
+//         blockCount         Provides the number
+//                           of blocks to be read
+//
+//    Returns 0 if blocks are read successfully otherwise 1
+
+/*************************************************************************************/
