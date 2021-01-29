@@ -36,8 +36,8 @@
 
 // Transfer functions
 
-//Read function
-void read_data_request()
+//Read single block function
+void read_single_block_request(int add)
 {
 	//CMD line request provided
 	if (ack == 1)
@@ -50,10 +50,33 @@ void read_data_request()
 		read_data_request_ack(0);
 		SD_Busy = 1;
 		//Read data through DAT LINES
-		SD_Card_read_pipe(Starting_Data_read_location);
+		SD_Card_read_pipe(add);
 	}	
 }
-DEFINE_THREAD(read_data_request);
+DEFINE_THREAD(read_single_block_request);
+
+void read_multiple_block_request(int add, int bcount)
+{
+	//CMD line request provided
+	if (ack == 1)
+	{
+		read_data_request_ack(1);
+		//int wait_for_free_SD();
+	}	
+	else
+	{
+		read_data_request_ack(0);
+		SD_Busy = 1;
+		//Read data through DAT LINES
+		while(bcount > 0)
+		{
+			SD_Card_read_pipe(add);
+			bcount--;
+			add++;
+		}
+	}	
+}
+DEFINE_THREAD(read_multiple_block_request);
 
 //Read Acknowledge fn
 void read_data_request_ack(uint1_t SD_Busy)
