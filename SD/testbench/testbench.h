@@ -1,4 +1,5 @@
 /************************** Constant Definitions *****************************/
+//List of SDHC Registers.
 #define BlockSize 0x04
 #define BlockCount 0x06
 #define Arguement 0x08
@@ -25,7 +26,7 @@
 #define Capabilities 0x40
 
 #define SDBase 0xffff3300 // SD Base Address.
-#define FixedBlockSize 128 //Block size is fixed to 512 bytes equivalent to 128 no of 32bit int.
+#define FixedBlockSize 128 //Block size is fixed to 512 bytes equivalent to 128-32bit int.
 #define MaxBlockCount 65535//Max value of Block Count 
 
 /******************************* Function Prototypes **********************************/
