@@ -36,6 +36,12 @@
 
 // Transfer functions
 
+void UHS1init()
+{
+	//execute card initialization
+	//CMD0, CMD8, CMD55, ACMD41, CMD11, CMD2,3,7
+}
+
 //Read single block function
 void read_single_block_request(int add)
 {
