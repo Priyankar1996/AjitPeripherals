@@ -1,6 +1,6 @@
 /*TESTBENCH FOR SD HOST CONTROLLER
   Authors: Arghya Kamal Dey, Priyankar Sarkar,Ajinkya Raghuwanshi,Deval Patel.
-  Date: December,2020.
+  Date: January,2021.
 */
 #include <pthread.h>
 #include <signal.h>
@@ -17,10 +17,6 @@
 int OCR, RCA = 0, writeAddress;
 /******************************************/
 // Main function
-// Check if Card is inserted
-// Software reset
-// Clock Enabled
-// Power Enabled
 // Initialization of the card is done
 // If initialized then blocks are written
 // After successful write block read is done to check memory

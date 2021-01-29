@@ -42,8 +42,7 @@ int ReadWriteSDHCRegister(long int rwbar, long int bytemask, long int phyAdd, in
 //          phyAdd       Points to the location 
 //                        of the register file.
 //           data       Stores the data to be written
-//                        into the register. 
-         
+//                        into the register.          
 
 void EnableInterruptStatusRegistersAndCheckInterruptLine(int data);
 //   Interrupts are set when the corresponding 
@@ -56,7 +55,9 @@ void EnableInterruptStatusRegistersAndCheckInterruptLine(int data);
 //
 //        PARAMETER             PURPOSE
 //          data             It specifies the interrupt 
-//                              to be enabled       
+//                          to be enabled. It is directly
+//                          written into the 'InterruptStatusEnable'
+//                          and 'InterruptSignalEnable' Registers
 
 int ExecuteInitializationSequence();
 //   Sends a sequence of commands required to initialize
@@ -64,6 +65,9 @@ int ExecuteInitializationSequence();
 //
 //   Returns 0 if no error is encountered throughout the
 //   process else 1.
+//
+//   Side effects :  1.RCA global variable value is read from response here.
+//                   2.OCR global variable value is read from response here.
 
 int PerformTuningSequence();
 //   Sends the 'execute tuning command' for 40 times
@@ -77,7 +81,8 @@ void SendGeneralCommand(int n);
 //
 //      PARAMETER     PURPOSE
 //        n       Sends General
-//                  CommandID       
+//                  CommandID     
+//
                 
 void SendApplicationSpecificCommand(int n);
 // Sends Application Specific Command to SDCard. 
@@ -93,7 +98,9 @@ int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData);
 //         blockCount         Provides the number
 //                          of blocks to be written
 //
-//    Returns 0 if blocks are written successfully otherwise 1
+//  Returns 0 if blocks are written successfully otherwise 1
+//
+//  Side effect : writeAddress global variable value is declared here.
 
 int ReadSingleOrMultiple512BytesBlock(int blockCount);
 // Function to read single and multiple blocks of 512bytes.
