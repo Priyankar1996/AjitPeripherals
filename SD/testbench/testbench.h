@@ -78,7 +78,9 @@ int PerformTuningSequence();
 //   Returns 0 if sampling point is obtained else 1. 
 
 void SendGeneralCommand(int n);
-// Sends General Command to SDcard.
+// Sends General Command to SD Host controller.
+// For sending command it writes to Argument, Block Size, Block Count, Transfer and Command register.
+// Then returns when the Command is sent to the SD card.
 //
 //      PARAMETER     PURPOSE
 //        n       Sends General
@@ -87,13 +89,15 @@ void SendGeneralCommand(int n);
                 
 void SendApplicationSpecificCommand(int n);
 // Sends Application Specific Command to SDCard. 
+// For sending application specific command it writes to Argument and Command register.
+// Then returns when the Command is sent to the SD card.
 //
 //        PARAMETER          PURPOSE
 //           n         Sends Application
 //                    Specific Command ID
 
 int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData);
-// Function to write single and multiple blocks of 512bytes.
+// Function to write single and multiple blocks of 512bytes thorugh Buffer Data Port Register. 
 //
 //         PARAMETER           PURPOSE
 //         blockCount         Provides the number
@@ -104,7 +108,7 @@ int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData);
 //  Side effect : writeAddress global variable value is declared here.
 
 int ReadSingleOrMultiple512BytesBlock(int blockCount);
-// Function to read single and multiple blocks of 512bytes.
+// Function to read single and multiple blocks of 512bytes through Buffer Data Port Register.
 //
 //         PARAMETER           PURPOSE
 //         blockCount         Provides the number

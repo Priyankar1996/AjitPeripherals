@@ -18,13 +18,11 @@ int OCR, RCA = 0, writeAddress;
 /******************************************/
 
 // Sequence of operations performed in main function:
-// 1. Check if Card is inserted.
-// 2. Software reset.
-// 3. Clock Enabled.
-// 4. Power Enabled.
-// 5, Initialization of the card is done.
-// 6. If initialized then blocks are written.
-// 7. After successful write, blocks are read to check memory.
+// 1. Initialization of the card is done.
+// 2. If initialized then a single block is written.
+// 3. After successful write, the block is read to check memory.
+// 4. Multiple Blocks are written into the memory
+// 5. Multiple Blocks are read from the memory to check memory.
 
 int main(int argc, char *argv[])
 {
@@ -89,8 +87,7 @@ int main(int argc, char *argv[])
         return 0;
 }
 
-
-
+// Performs read/write operations on SDHC Register Set.
 int ReadWriteSDHCRegister(long int rwbar, long int bytemask, long int phyAdd, int data)
 {
         /*Bit 63: rwbar
@@ -146,7 +143,7 @@ void EnableInterruptStatusRegistersAndCheckInterruptLine(int data)
         // Interrrupt status is printed here
         fprintf(stderr, "Normal Interrupt status is %d\n", status);
 }
-
+// Sends General Command to SD Host controller.
 void SendGeneralCommand(int n)
 {
     //Check Command Inhibit(CMD)
@@ -251,6 +248,7 @@ void SendGeneralCommand(int n)
         EnableInterruptStatusRegistersAndCheckInterruptLine(0x1);//Checking Command Complete Interrupt			
         ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x1);//Clear Command Complete Interrupt
 }
+// Sends Application Specific Command to SD Host controller.
 void SendApplicationSpecificCommand(int n)
 {
         int data;
@@ -290,7 +288,8 @@ void SendApplicationSpecificCommand(int n)
         EnableInterruptStatusRegistersAndCheckInterruptLine(0x1);//Checking Command Complete Interrupt			
         ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x1);//Clear Command Complete interrupt
 }
-
+//   Sends the 'execute tuning command' for 40 times
+//   until the card is tuned to the Sampling Clock Edges.
 int PerformTuningSequence()
 {
 	int response=0,count=40;
@@ -322,7 +321,7 @@ int PerformTuningSequence()
 	else
 		return 1;
 }
-
+//   Sends a sequence of commands required to initialize the SD Card.
 int ExecuteInitializationSequence()
 { 
         int response = 0;
