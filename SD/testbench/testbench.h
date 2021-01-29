@@ -62,7 +62,8 @@ void EnableInterruptStatusRegistersAndCheckInterruptLine(int data);
 
 int ExecuteInitializationSequence();
 //   Sends a sequence of commands required to initialize
-//   the SD Card.
+//   the SD Card. Refer to pg.100-103 of 
+//   SD Host Controller Simplified Specification Version 3.00.
 //
 //   Returns 0 if no error is encountered throughout the
 //   process else 1.
@@ -73,14 +74,16 @@ int ExecuteInitializationSequence();
 int PerformTuningSequence();
 //   Sends the 'execute tuning command' for 40 times
 //   until the card is tuned to the Sampling 
-//   Clock Edges. 
+//   Clock Edges. Refer to pg. 73 of 
+//   SD Host Controller Simplified Specification Version 3.00.
 //
 //   Returns 0 if sampling point is obtained else 1. 
 
 void SendGeneralCommand(int n);
 // Sends General Command to SD Host controller.
 // For sending command it writes to Argument, Block Size, Block Count, 
-// Transfer and Command register.
+// Transfer and Command register. Refer to pg.107 of 
+// SD Host Controller Simplified Specification Version 3.00.
 //
 //      PARAMETER     PURPOSE
 //        n       Sends General
@@ -89,8 +92,9 @@ void SendGeneralCommand(int n);
                 
 void SendApplicationSpecificCommand(int n);
 // Sends Application Specific Command to SD Host Controller. 
-// For sending application specific command it writes to Argument and 
-// Command register.
+// For sending application specific command it writes to 
+// Argument and Command register. Refer to pg.107 of 
+// SD Host Controller Simplified Specification Version 3.00.
 //
 //        PARAMETER          PURPOSE
 //           n         Sends Application
