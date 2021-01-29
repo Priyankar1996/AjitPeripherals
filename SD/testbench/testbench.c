@@ -16,10 +16,16 @@
 /************Global Variables**************/
 int OCR, RCA = 0, writeAddress;
 /******************************************/
-// Main function
-// Initialization of the card is done
-// If initialized then blocks are written
-// After successful write block read is done to check memory
+
+// Sequence of operations performed in main function:
+// 1. Check if Card is inserted.
+// 2. Software reset.
+// 3. Clock Enabled.
+// 4. Power Enabled.
+// 5, Initialization of the card is done.
+// 6. If initialized then blocks are written.
+// 7. After successful write, blocks are read to check memory.
+
 int main(int argc, char *argv[])
 {
         int err = 0;
