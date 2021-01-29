@@ -27,7 +27,7 @@
 
 #define SDBase 0xffff3300 // SD Base Address.
 #define FixedBlockSize 128 //Block size is fixed to 512 bytes equivalent to 128-32bit int.
-#define MaxBlockCount 65535//Max value of Block Count 
+#define MaxBlockCount 65535//Max value of Block Count.
 
 /******************************* Function Prototypes **********************************/
 /**************************************************************************************/
@@ -79,8 +79,8 @@ int PerformTuningSequence();
 
 void SendGeneralCommand(int n);
 // Sends General Command to SD Host controller.
-// For sending command it writes to Argument, Block Size, Block Count, Transfer and Command register.
-// Then returns when the Command is sent to the SD card.
+// For sending command it writes to Argument, Block Size, Block Count, 
+// Transfer and Command register.
 //
 //      PARAMETER     PURPOSE
 //        n       Sends General
@@ -88,16 +88,18 @@ void SendGeneralCommand(int n);
 //
                 
 void SendApplicationSpecificCommand(int n);
-// Sends Application Specific Command to SDCard. 
-// For sending application specific command it writes to Argument and Command register.
-// Then returns when the Command is sent to the SD card.
+// Sends Application Specific Command to SD Host Controller. 
+// For sending application specific command it writes to Argument and 
+// Command register.
 //
 //        PARAMETER          PURPOSE
 //           n         Sends Application
 //                    Specific Command ID
 
 int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData);
-// Function to write single and multiple blocks of 512bytes thorugh Buffer Data Port Register. 
+// Function to write single and multiple blocks of 512bytes thorugh Buffer Data Port Register.
+// Refer to page no. 111-112(Transaction using DAT(Data) line) of
+// SD Host Controller Simplified Specification Version 3.00.
 //
 //         PARAMETER           PURPOSE
 //         blockCount         Provides the number
@@ -109,6 +111,8 @@ int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData);
 
 int ReadSingleOrMultiple512BytesBlock(int blockCount);
 // Function to read single and multiple blocks of 512bytes through Buffer Data Port Register.
+// Refer to page no. 111-112(Transaction using DAT(Data) line) of
+// SD Host Controller Simplified Specification Version 3.00.
 //
 //         PARAMETER           PURPOSE
 //         blockCount         Provides the number
