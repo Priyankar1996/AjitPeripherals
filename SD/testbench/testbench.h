@@ -25,7 +25,7 @@
 #define HostControl2 0x3E
 #define Capabilities 0x40
 
-#define SDBase 0xffff3300 // SD Base Address.
+#define SDBase 0xff3300 // SD Base Address.
 #define FixedBlockSize 128 //Block size is fixed to 512 bytes equivalent to 128-32bit int.
 #define MaxBlockCount 65535//Max value of Block Count.
 
