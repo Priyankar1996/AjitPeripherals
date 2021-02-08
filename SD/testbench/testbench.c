@@ -98,12 +98,16 @@ int ReadWriteSDHCRegister(long int rwbar, long int bytemask, long int phyAdd, in
         uint64_t writeData;
         uint32_t readData;
         int returnData;
-        writeData = (rwbar << 63) | (bytemask << 59) | (phyAdd << 32) | data;
+	int dataToSend;
+	//Swap endian
+	dataToSend = ((data & 0x000000ff) << 24) |((data & 0x0000ff00) << 8) |((data & 0x00ff0000) >> 8) | ((data & 0xff000000) >> 24);
+        writeData = (rwbar << 63) | (bytemask << 59) | (phyAdd << 32) | dataToSend;
         write_uint64("peripheral_bridge_to_sdhc_request", writeData);
         //In case of write (rwbar =0) there should be a zero received as an acknowledgement
         //Otherwise Data is read
         readData = read_uint32("sdhc_to_peripheral_bridge_response");
-        returnData = readData;
+	//Swap endian 
+        returnData = ((readData & 0x000000ff) << 24) | ((readData & 0x0000ff00)<<8) |((readData & 0x00ff0000)>>8)| ((readData & 0xff000000)>>24) ;
         return returnData;
 }
 
@@ -117,11 +121,11 @@ void EnableInterruptStatusRegistersAndCheckInterruptLine(int data)
         uint32_t status;
         uint32_t errorStatus;
         uint8_t interruptLine = 0;
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatusEnable), data);  //Writing into the normal status enable register
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptSignalEnable), data);  //Writing into the normal signal enable register
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptStatusEnable), data);  //Writing into the normal status enable register
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptSignalEnable), data);  //Writing into the normal signal enable register
         //Enable error interrupt registers too.
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + ErrorInterruptStatusEnable), 0xffff); //Writing to error interrupt status enable register
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + ErrorInterruptSignalEnable), 0xffff); //Writing to error interrupt signal enable register
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + ErrorInterruptStatusEnable), 0xffff); //Writing to error interrupt status enable register
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + ErrorInterruptSignalEnable), 0xffff); //Writing to error interrupt signal enable register
         //Checking the interrupt line
         while (1)
         {
@@ -130,15 +134,15 @@ void EnableInterruptStatusRegistersAndCheckInterruptLine(int data)
                 if (flag == 1)
                         break;
         }
-        status = ReadWriteSDHCRegister(1, 3, (SDBase + NormalInterruptStatus), 0); //Reading from the normal interrupt status register
+        status = ReadWriteSDHCRegister(1, 0xc, (SDBase + NormalInterruptStatus), 0); //Reading from the normal interrupt status register
         //Check whether there is any error interrupt bit 
         //set or not by checking bit-15 of the status.
         errorBitCheck = (status >> 15);
         if (errorBitCheck == 1)
         {
-                errorStatus = ReadWriteSDHCRegister(1, 3, (SDBase + ErrorInterruptStatus), 0); //Reading from error interrupt status register
+                errorStatus = ReadWriteSDHCRegister(1, 0xc, (SDBase + ErrorInterruptStatus), 0); //Reading from error interrupt status register
                 fprintf(stderr, "Error Interrupt status is %d\n", errorStatus);
-                ack = ReadWriteSDHCRegister(0, 3, (SDBase + ErrorInterruptStatus), 0xffff); //Clearing error interrupt status
+                ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + ErrorInterruptStatus), 0xffff); //Clearing error interrupt status
         }
         // Interrrupt status is printed here
         fprintf(stderr, "Normal Interrupt status is %d\n", status);
@@ -222,7 +226,7 @@ void SendGeneralCommand(int n)
 	        else 
 		        data =0;
 
-                ack = ReadWriteSDHCRegister(0,3,(SDBase + Transfer),data);
+                ack = ReadWriteSDHCRegister(0,0xc,(SDBase + Transfer),data);
         }
         //Generate Command register values... Divided in terms type of response expected
 	if( (n == 0)|| (n==4) ||(n==15))
@@ -244,9 +248,9 @@ void SendGeneralCommand(int n)
         {
                 cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
         }
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + Command),cmd);//Write into Command register
+        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + Command),cmd);//Write into Command register
         EnableInterruptStatusRegistersAndCheckInterruptLine(0x1);//Checking Command Complete Interrupt			
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x1);//Clear Command Complete Interrupt
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptStatus), 0x1);//Clear Command Complete Interrupt
 }
 // Sends Application Specific Command to SD Host controller.
 void SendApplicationSpecificCommand(int n)
@@ -284,9 +288,9 @@ void SendApplicationSpecificCommand(int n)
                 cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|2;
         else//Response Type R1b, R5b
                 cmd = (n<<8)|(0<<6)|(0<<5)|(1<<4)|(1<<3)|(0<<2)|3;
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + Command),cmd);//Write into Command register
+        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + Command),cmd);//Write into Command register
         EnableInterruptStatusRegistersAndCheckInterruptLine(0x1);//Checking Command Complete Interrupt			
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x1);//Clear Command Complete interrupt
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptStatus), 0x1);//Clear Command Complete interrupt
 }
 //   Sends the 'execute tuning command' for 40 times
 //   until the card is tuned to the Sampling Clock Edges.
@@ -297,7 +301,7 @@ int PerformTuningSequence()
         int samplingClockSelect;
         int ack ;
         int readTuningData;
-	ack = ReadWriteSDHCRegister(0,3,(SDBase + HostControl2),0x40);//Set Execute Tuning to 1
+	ack = ReadWriteSDHCRegister(0,0xc,(SDBase + HostControl2),0x40);//Set Execute Tuning to 1
 	while(count!=0)
 	{	
 		//Send CMD19
@@ -306,9 +310,9 @@ int PerformTuningSequence()
 		//Check for Buffer Read Ready
 		EnableInterruptStatusRegistersAndCheckInterruptLine(0x20);
 		//Clear Buffer Read Ready
-		ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x20);
+		ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptStatus), 0x20);
 		//execute tuning read
-		readTuningData = ReadWriteSDHCRegister(1,3,(SDBase + HostControl2),0);
+		readTuningData = ReadWriteSDHCRegister(1,0xc,(SDBase + HostControl2),0);
 		executeTuning = (readTuningData & 0x40)>>6;
 		if(executeTuning==0)
 			break;
@@ -341,7 +345,7 @@ int ExecuteInitializationSequence()
         //card insertion and removal signal enable
         EnableInterruptStatusRegistersAndCheckInterruptLine(0xc0);
         //clear the insertion interrupt
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x40);
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptStatus), 0x40);
         //PresentState state -> card inserted check
         readData = ReadWriteSDHCRegister(1, 0xf, (SDBase + PresentState), 0);
         if (((readData >> 16) & 1) != 1)
@@ -352,29 +356,29 @@ int ExecuteInitializationSequence()
         //reading Capabilities register lower 32 bits
         readData = ReadWriteSDHCRegister(1, 0xf, (SDBase + Capabilities), 0);
 	//software reset asserted
-        ack = ReadWriteSDHCRegister(0, 1, (SDBase + SoftwareReset), 1);
+        ack = ReadWriteSDHCRegister(0, 0x8, (SDBase + SoftwareReset), 1);
         fprintf(stderr, " Capabilitiesbilities reg = %d \n", readData);
         fprintf(stderr, " Base Clock Frequency For SD Clock is %d \n", ((readData >> 8) & 0xff));
         voltageSupport = (readData >> 24) & 0x7; //supported voltages
         sdclkFreq = (readData >> 8);//SD clock frequency set to base frequency 
 	data =(sdclkFreq << 6) | 1 ;
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + ClockControl),data);//Internal clock enable and SDCLK frequency select
-        readData = ReadWriteSDHCRegister(1,3,(SDBase + ClockControl),0);
+        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + ClockControl),data);//Internal clock enable and SDCLK frequency select
+        readData = ReadWriteSDHCRegister(1,0xc,(SDBase + ClockControl),0);
         while( ((readData >>1)&1) !=1)
         {
-               readData = ReadWriteSDHCRegister(1,3,(SDBase + ClockControl),0);
+               readData = ReadWriteSDHCRegister(1,0xc,(SDBase + ClockControl),0);
         }//Run until Internal Clock Stable
 
         //SD clock Enable
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + ClockControl),4);
+        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + ClockControl),4);
          //SD bus Power control
         if((voltageSupport >>2))
                 data = 0xb;//1.8V power
         else
                 data = 0xf;//3.3V power
-        ack = ReadWriteSDHCRegister(0,1, (SDBase + PowerControl),data);
+        ack = ReadWriteSDHCRegister(0,0x8, (SDBase + PowerControl),data);
 	//software reset deasserted	
-        ack = ReadWriteSDHCRegister(0, 1, (SDBase + SoftwareReset), 0);
+        ack = ReadWriteSDHCRegister(0, 0x8, (SDBase + SoftwareReset), 0);
         SendGeneralCommand(0);
         SendGeneralCommand(8);
         response = ReadWriteSDHCRegister(1, 0xf, (SDBase + Response0), 0);
@@ -420,7 +424,7 @@ int ExecuteInitializationSequence()
 	        }
                 //Stop providing SD clock to the card
 	        //SD clock Enable = 0
-	        ack = ReadWriteSDHCRegister(0,3,(SDBase + ClockControl),0);
+	        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + ClockControl),0);
 	        response = ReadWriteSDHCRegister(1,0xf,(SDBase + PresentState),0);//DAT[3:0]level read
 	        if(((response >> 20) & 0xf) != 0)
                 {
@@ -428,16 +432,16 @@ int ExecuteInitializationSequence()
                         return 1;
                 }
 	        //1.8V Signal Enable
-	        ack = ReadWriteSDHCRegister(0,3,(SDBase + HostControl2),0x8);
+	        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + HostControl2),0x8);
 	        //Check 1.8V signal after waiting for 5ms.
-	        response = ReadWriteSDHCRegister(1,3,(SDBase + HostControl2),0);
+	        response = ReadWriteSDHCRegister(1,0xc,(SDBase + HostControl2),0);
 	        if( ((response >>3) & 1) == 0)
 	        {
 		        fprintf(stderr,"Error in 1.8 Volt signalling");
 		        return 1;
 	        }
                 //Provides SD clock
-                ack = ReadWriteSDHCRegister(0,3,(SDBase + ClockControl),4);
+                ack = ReadWriteSDHCRegister(0,0xc,(SDBase + ClockControl),4);
                 //wait for 1ms.
                 response = ReadWriteSDHCRegister(1,0xf,(SDBase + PresentState),0);//DAT[3:0] level read
 	        if(((response >> 20) & 0xf)!=0xf)
@@ -460,7 +464,7 @@ int ExecuteInitializationSequence()
         SendGeneralCommand(7);
         // CMD7 is busy with response type therefore Transfer complete has to be checked too
         EnableInterruptStatusRegistersAndCheckInterruptLine(0x2);
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear the interrupt
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptStatus), 0x2);//clear the interrupt
         response = ReadWriteSDHCRegister(1,0xf,(SDBase + Response0),0);
         //Check CARD_IS_LOCKED bit in response
         cardIsLocked = (response & 0x02000000) >> 25;
@@ -476,7 +480,7 @@ int ExecuteInitializationSequence()
         SendGeneralCommand(6);//set-mode cmd(6)
         response = ReadWriteSDHCRegister(1,0xf,(SDBase + Response0),0);
         //Data Transfer width to 1 (4-bit mode) in Host control 1 register
-        ack = ReadWriteSDHCRegister(0, 1, (SDBase + HostControl), 2);
+        ack = ReadWriteSDHCRegister(0, 0x8, (SDBase + HostControl), 2);
         flag = PerformTuningSequence ();
 	return flag;
 }
@@ -493,9 +497,9 @@ int ReadSingleOrMultiple512BytesBlock(int blockCount)
         int count = blockCount;
         long int i;
 	//Set Block Size to 512 bytes
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + FixedBlockSize),512);
+        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + FixedBlockSize),512);
 	//Set Block Count to maximum value possible (65535)
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + BlockCount),blockCount);
+        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + BlockCount),blockCount);
 	if (blockCount ==1)
 		SendGeneralCommand(17);
 	else
@@ -506,7 +510,7 @@ int ReadSingleOrMultiple512BytesBlock(int blockCount)
 	{
 		EnableInterruptStatusRegistersAndCheckInterruptLine(0x20);
 		fprintf(stderr,"Buffer Read Ready Interrupt occured,ready to write buffer\n");
-		ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x20);
+		ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptStatus), 0x20);
 		fprintf(stderr,"Buffer Read Ready Interrupt cleared,wait for interrupt to occur\n");
 		//Get Block Data
 		for(i=0; i< (FixedBlockSize * blockCount); i++)
@@ -527,7 +531,7 @@ int ReadSingleOrMultiple512BytesBlock(int blockCount)
 		count--;
 	}
         EnableInterruptStatusRegistersAndCheckInterruptLine(0x2);//Wait for transfer complete interrupt
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear transfer complete interrupt
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptStatus), 0x2);//clear transfer complete interrupt
         SendGeneralCommand(15);
         response = ReadWriteSDHCRegister(1,0xf,(SDBase + Response0),0);
         return flag;
@@ -544,9 +548,9 @@ int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData)
 	writeAddress= 0;
         long int i ;
         //Set Block Size to fixed 512 bytes
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + FixedBlockSize),512);
+        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + FixedBlockSize),512);
 	//Set Block Count Register
-        ack = ReadWriteSDHCRegister(0,3,(SDBase + BlockCount),blockCount);
+        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + BlockCount),blockCount);
 	if (blockCount ==1)
 		SendGeneralCommand(24);
 	else
@@ -565,15 +569,15 @@ int WriteSingleOrMultiple512BytesBlock(int blockCount, int * writeData)
 	{
 		EnableInterruptStatusRegistersAndCheckInterruptLine(0x10);		
 		fprintf(stderr,"Buffer Write Ready Interrupt occured,ready to write buffer\n");
-                ack = ReadWriteSDHCRegister(0,3, (SDBase + NormalInterruptStatus), 0x10);//clear Buffer write ready interrupt
+                ack = ReadWriteSDHCRegister(0,0xc, (SDBase + NormalInterruptStatus), 0x10);//clear Buffer write ready interrupt
 		fprintf(stderr,"Buffer Write Ready Interrupt cleared,wait for interrupt to occur\n");
 		//Set block data
 		for(i=0; i< (FixedBlockSize * blockCount) ; i++)
-                        ack = ReadWriteSDHCRegister(0,3,(SDBase + BufferDataPort),writeData[i]);
+                        ack = ReadWriteSDHCRegister(0,0xc,(SDBase + BufferDataPort),writeData[i]);
 		count--;
 	}
 	EnableInterruptStatusRegistersAndCheckInterruptLine(0x2);//Wait for Transfer complete Interrupt
-        ack = ReadWriteSDHCRegister(0, 3, (SDBase + NormalInterruptStatus), 0x2);//clear the transfer complete interrupt
+        ack = ReadWriteSDHCRegister(0, 0xc, (SDBase + NormalInterruptStatus), 0x2);//clear the transfer complete interrupt
 	SendGeneralCommand(15);  //sends the card into inactive state
 	response = ReadWriteSDHCRegister(1,0xf,(SDBase + Response0),0);
 	return flag ;
