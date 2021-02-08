@@ -1,6 +1,7 @@
 // Register set size
 
 $parameter REGISTERSETSIZE 256
+$constant ZERO_8: $uint<8> := 0
 
 // Registers are byte addressable
 // Therefore an array of size 256 
@@ -18,7 +19,7 @@ $pipe peripheral_bridge_to_sdhc_request :$uint<64> $depth 2
 //sdhc to peripheral bridge response pipe
 $pipe sdhc_to_peripheral_bridge_response :$uint<32> $depth 2 
 
-$module [sdhc_daemon] $in() $out() $is()
+$module [sdhc_daemon] $in() $out() $is
 {
 
 	//read the request pipe
@@ -58,27 +59,20 @@ $module [sdhc_daemon] $in() $out() $is()
 			$endif
 			//Send back zero as acknowledgment
 			sdhc_to_peripheral_bridge_response:= 0
-		$else 
+		$else
+			readdata3 := sdhcRegisters[((address & _h0000ff) + 0)]
+			readdata2 := sdhcRegisters[((address & _h0000ff) + 1)]
+			readdata1 := sdhcRegisters[((address & _h0000ff) + 2)]
+			readdata0 := sdhcRegisters[((address & _h0000ff) + 3)] 
 			$if(bytemask==15) $then
-				data3 := sdhcRegisters[((address & _h0000ff) + 0)]
-				data2 := sdhcRegisters[((address & _h0000ff) + 1)]
-				data1 := sdhcRegisters[((address & _h0000ff) + 2)]
-				data0 := sdhcRegisters[((address & _h0000ff) + 3)]
+				sdhc_to_peripheral_bridge_response := ($concat readdata3 readdata2 readdata1 readdata0)		
 			$else $if(bytemask==12) $then
-				data3 := sdhcRegisters[((address & _h0000ff) + 0)]
-				data2 := sdhcRegisters[((address & _h0000ff) + 1)]
-				data1 := 0
-				data0 := 0
+				sdhc_to_peripheral_bridge_response := ($concat readdata3 readdata2 ZERO_8 ZERO_8)
 			      $else $if(bytemask==8) $then	
-					data3 := sdhcRegisters[((address & _h0000ff) + 0)]
-					data2 := 0
-					data1 := 0
-					data0 := 0
+					sdhc_to_peripheral_bridge_response := ($concat readdata3 ZERO_8 ZERO_8 ZERO_8)
 				    $endif
 			      $endif
 			$endif
-			//Send the data read from the registers
-			sdhc_to_peripheral_bridge_response := ($concat data3 data2 data1 data0)
 		$endif
 				
 			
@@ -88,4 +82,5 @@ $module [sdhc_daemon] $in() $out() $is()
 
 
 		$place[loopback]
+	}
 } 
