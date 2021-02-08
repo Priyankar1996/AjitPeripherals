@@ -31,7 +31,7 @@
 
 /******************************* Function Prototypes **********************************/
 /**************************************************************************************/
-int ReadWriteSDHCRegister(long int rwbar, long int bytemask, long int phyAdd, int data);
+int ReadWriteSDHCRegister(long int rwbar,int regSize, long int phyAdd, int data);
 // Performs read/write operations on SDHC Register Set.
 //
 // Returns 0 as acknowledgement if write operation is performed on any 
@@ -39,7 +39,7 @@ int ReadWriteSDHCRegister(long int rwbar, long int bytemask, long int phyAdd, in
 //
 //        PARAMETERS           PURPOSE
 //          rwbar          Write=0,Read=1
-//         bytemask     Masks the byte if unused.
+//         regSize      Tells the size of the register.
 //          phyAdd       Points to the location 
 //                        of the register file.
 //           data       Stores the data to be written
