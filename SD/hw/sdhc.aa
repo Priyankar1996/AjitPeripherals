@@ -1,0 +1,91 @@
+// Register set size
+
+$parameter REGISTERSETSIZE 256
+
+// Registers are byte addressable
+// Therefore an array of size 256 
+// Each of 8-bits
+$storage sdhcRegisters: $array [REGISTERSETSIZE] $of $uint<8>
+
+//main thread: reads from the peripheral to sdhc request pipe
+//sends acknowledgment or data through sdhc to peripheral response pipe
+//Decodes the address from read data and writes into the particular register 
+
+
+//peripheral bridge to sdhc request pipe
+$pipe peripheral_bridge_to_sdhc_request :$uint<64> $depth 2
+
+//sdhc to peripheral bridge response pipe
+$pipe sdhc_to_peripheral_bridge_response :$uint<32> $depth 2 
+
+$module [sdhc_daemon] $in() $out() $is()
+{
+
+	//read the request pipe
+	//split the data into the following 
+	// 63: rwbar
+	// 62-59: bytemask
+	// 55-32: address
+	// 31-00: data
+	//decide whether to read or write
+	//decode register array index from address
+	//On completion of write first write to the register then
+	//send back zero as acknowledgment through the response pipe
+	//On read from register send back data through response pipe
+  	
+	$branchblock[loop]{
+		
+		$merge $entry loopback $endmerge
+
+		//read peripheral bridge request
+		request := peripheral_bridge_to_sdhc_request 
+		$volatile $split (request 1 4 3 24 8 8 8 8) (rwbar bytemask unused address data3 data2 data1 data0)
+		
+
+		$if(rwbar == 0) $then
+			$if(bytemask==15) $then
+				sdhcRegisters[((address & _h0000ff) + 0)] := data3
+				sdhcRegisters[((address & _h0000ff) + 1)] := data2
+				sdhcRegisters[((address & _h0000ff) + 2)] := data1
+				sdhcRegisters[((address & _h0000ff) + 3)] := data0
+ 			$else $if(bytemask==12) $then
+				sdhcRegisters[((address & _h0000ff) + 0)] := data3
+				sdhcRegisters[((address & _h0000ff) + 1)] := data2
+			      $else $if(bytemask==8) $then
+					sdhcRegisters[((address & _h00ff) + 0)] := data3
+			            $endif
+			      $endif
+			$endif
+			//Send back zero as acknowledgment
+			sdhc_to_peripheral_bridge_response:= 0
+		$else 
+			$if(bytemask==15) $then
+				data3 := sdhcRegisters[((address & _h0000ff) + 0)]
+				data2 := sdhcRegisters[((address & _h0000ff) + 1)]
+				data1 := sdhcRegisters[((address & _h0000ff) + 2)]
+				data0 := sdhcRegisters[((address & _h0000ff) + 3)]
+			$else $if(bytemask==12) $then
+				data3 := sdhcRegisters[((address & _h0000ff) + 0)]
+				data2 := sdhcRegisters[((address & _h0000ff) + 1)]
+				data1 := 0
+				data0 := 0
+			      $else $if(bytemask==8) $then	
+					data3 := sdhcRegisters[((address & _h0000ff) + 0)]
+					data2 := 0
+					data1 := 0
+					data0 := 0
+				    $endif
+			      $endif
+			$endif
+			//Send the data read from the registers
+			sdhc_to_peripheral_bridge_response := ($concat data3 data2 data1 data0)
+		$endif
+				
+			
+				
+	
+
+
+
+		$place[loopback]
+} 
