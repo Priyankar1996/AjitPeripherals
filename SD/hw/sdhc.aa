@@ -2,11 +2,31 @@
 
 $parameter REGISTERSETSIZE 256
 $constant ZERO_8: $uint<8> := 0
+$constant ZERO_16: $uint<16> := 0
+$constant ZERO_32: $uint<32> := 0
 
 // Registers are byte addressable
 // Therefore an array of size 256 
 // Each of 8-bits
+
 $storage sdhcRegisters: $array [REGISTERSETSIZE] $of $uint<8>
+
+//Read-only register (RO): Register bits are read-only and cannot be altered by software or any reset
+//operation. Writes to these bits are ignored.
+//Read-only status (ROC): These bits are initialized to zero at reset. Writes to these bits are ignored.
+//Read-Write register (RW): Register bits are read-write and may be either set or cleared by software
+//to the desired state.
+//Read-only status, Write-1-to-clear status(RW1C): Register bits indicate status when read, a set bit
+//indicating a status event may be cleared by writing a 1. Writing a 0 to RW1C bits has no
+//effect.
+//Read-Write, automatic clear register (RWAC) :The Host Driver requests a Host Controller operation by
+//setting the bit. The Host Controllers shall clear the bit automatically when the operation of
+//complete. Writing a 0 to RWAC bits has no effect.
+//Hardware Initialized(HWInit): Register bits are initialized by firmware or hardware mechanisms such
+//as pin strapping or serial EEPROM. Bits are read-only after initialization, and writes to these
+//bits are ignored.
+//Reserved. These bits are initialized to zero
+
 
 //main thread: reads from the peripheral to sdhc request pipe
 //sends acknowledgment or data through sdhc to peripheral response pipe
@@ -18,6 +38,7 @@ $pipe peripheral_bridge_to_sdhc_request :$uint<64> $depth 2
 
 //sdhc to peripheral bridge response pipe
 $pipe sdhc_to_peripheral_bridge_response :$uint<32> $depth 2 
+
 
 $module [sdhc_daemon] $in() $out() $is
 {
@@ -41,40 +62,32 @@ $module [sdhc_daemon] $in() $out() $is
 		//read peripheral bridge request
 		request := peripheral_bridge_to_sdhc_request 
 		$volatile $split (request 1 4 3 24 8 8 8 8) (rwbar bytemask unused address data3 data2 data1 data0)
-		
+		//Split the bytemask
+		$volatile $split (bytemask 1 1 1 1) (b3 b2 b1 b0)
 
 		$if(rwbar == 0) $then
-			$if(bytemask==15) $then
+			$guard(b3)
 				sdhcRegisters[((address & _h0000ff) + 0)] := data3
+			$guard(b2)
 				sdhcRegisters[((address & _h0000ff) + 1)] := data2
+			$guard(b1)
 				sdhcRegisters[((address & _h0000ff) + 2)] := data1
+			$guard(b0)
 				sdhcRegisters[((address & _h0000ff) + 3)] := data0
- 			$else $if(bytemask==12) $then
-				sdhcRegisters[((address & _h0000ff) + 0)] := data3
-				sdhcRegisters[((address & _h0000ff) + 1)] := data2
-			      $else $if(bytemask==8) $then
-					sdhcRegisters[((address & _h00ff) + 0)] := data3
-			            $endif
-			      $endif
-			$endif
 			//Send back zero as acknowledgment
 			sdhc_to_peripheral_bridge_response:= 0
 		$else
-			readdata3 := sdhcRegisters[((address & _h0000ff) + 0)]
-			readdata2 := sdhcRegisters[((address & _h0000ff) + 1)]
-			readdata1 := sdhcRegisters[((address & _h0000ff) + 2)]
-			readdata0 := sdhcRegisters[((address & _h0000ff) + 3)] 
-			$if(bytemask==15) $then
-				sdhc_to_peripheral_bridge_response := ($concat readdata3 readdata2 readdata1 readdata0)		
-			$else $if(bytemask==12) $then
-				sdhc_to_peripheral_bridge_response := ($concat readdata3 readdata2 ZERO_8 ZERO_8)
-			      $else $if(bytemask==8) $then	
-					sdhc_to_peripheral_bridge_response := ($concat readdata3 ZERO_8 ZERO_8 ZERO_8)
-				    $endif
-			      $endif
-			$endif
+			
+			readdata3 := ($mux b3 sdhcRegisters[((address & _h0000ff) + 0)] ZERO_8)
+			readdata2 := ($mux b2 sdhcRegisters[((address & _h0000ff) + 1)] ZERO_8)
+			readdata1 := ($mux b1 sdhcRegisters[((address & _h0000ff) + 2)] ZERO_8)
+			readdata0 := ($mux b0 sdhcRegisters[((address & _h0000ff) + 3)] ZERO_8)
+			//Send back the read value from the registers
+			sdhc_to_peripheral_bridge_response := ($concat readdata3 readdata2 readdata1 readdata0)		
+			
 		$endif
-				
+		//Make a database for every type of data bits
+		//Then check before read or write
 			
 				
 	
