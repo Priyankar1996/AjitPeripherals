@@ -1,0 +1,44 @@
+$module [generate_crc_7] $in(message_signal:$uint<40>) $out(generated_crc:$uint<7>) $is
+{
+	$branchblock[loop]
+	{
+		$merge $entry loopback
+			$phi I := ($bitcast ($uint<6>) 32) $on $entry
+				next_I $on loopback
+			$phi crc_out := ($slice message_signal 39 33) $on $entry 
+				final_crc_out $on loopback
+			$phi temp := ($slice message_signal 32 0) $on $entry
+				next_temp $on loopback
+		$endmerge
+
+		$if((crc_out [] 6) == 1) $then
+			a := (crc_out [] 5)
+			b := (crc_out [] 4)
+			c := (crc_out [] 3)
+			d := ((crc_out [] 2) ^ 1)
+			e := (crc_out [] 1)
+			f := (crc_out [] 0)
+			g := ((temp [] 32) ^ 1)
+			crc_out_true := ($concat a b c d e f g)
+			$place [MSB_true]
+		$else
+			crc_out_false := ($concat ($slice crc_out 5 0) (temp [] 32))
+			$place [MSB_false]
+	
+		$endif
+
+		$merge MSB_true MSB_false
+			$phi final_crc_out := crc_out_true $on MSB_true crc_out_false $on MSB_false
+		$endmerge
+		
+		$volatile next_I := (I - 1)
+		$volatile next_temp := (temp << 1)
+
+		$rreport( generate_crc_7 Output crc_out)			
+		$if (next_I >= 0) $then
+			$place[loopback]
+		$endif
+
+	}(crc_out => crc_out)
+	generated_crc := crc_out
+}
