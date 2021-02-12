@@ -53,7 +53,7 @@ $storage sdhcRegisters: $array [REGISTERSETSIZE] $of $uint<8>
 //Hardware Initialized(HWInit): Register bits are initialized by firmware or hardware mechanisms such
 //as pin strapping or serial EEPROM. Bits are read-only after initialization, and writes to these
 //bits are ignored.
-//Reserved. These bits are initialized to zero
+//Reserved. These bits are initialized to zero.
 
 
 //main thread: reads from the peripheral to sdhc request pipe
