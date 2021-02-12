@@ -1,10 +1,38 @@
+// Register Addresses
+$parameter BlockSize 4
+$parameter BlockCount 6
+$parameter Argument 8
+$parameter Transfer 12
+$parameter Command 14
+$parameter Response0 16
+$parameter Response2 20
+$parameter Response4 24
+$parameter Response6 28
+$parameter BufferDataPort 32
+$parameter PresentState 36
+$parameter HostControl 40
+$parameter PowerControl 41
+$parameter ClockControl 44
+$parameter SoftwareReset 47
+$parameter NormalInterruptStatus 48
+$parameter ErrorInterruptStatus 50
+$parameter NormalInterruptStatusEnable 52
+$parameter ErrorInterruptStatusEnable 54
+$parameter NormalInterruptSignalEnable 56
+$parameter ErrorInterruptSignalEnable 58
+$parameter AutoCmdError 60
+$parameter HostControl2 62
+$parameter Capabilities 64
+
 // Register set size
 
 $parameter REGISTERSETSIZE 256
+//useful constants
 $constant ZERO_8: $uint<8> := 0
 $constant ZERO_16: $uint<16> := 0
 $constant ZERO_32: $uint<32> := 0
-
+$constant ZERO_1: $uint<1> := 0
+$constant ONE_1: $uint<1>:= 1
 // Registers are byte addressable
 // Therefore an array of size 256 
 // Each of 8-bits
@@ -29,7 +57,7 @@ $storage sdhcRegisters: $array [REGISTERSETSIZE] $of $uint<8>
 
 
 //main thread: reads from the peripheral to sdhc request pipe
-//sends acknowledgement or data through sdhc to peripheral response pipe
+//sends acknowledgment or data through sdhc to peripheral response pipe
 //Decodes the address from read data and writes into the particular register 
 
 
@@ -38,6 +66,23 @@ $pipe peripheral_bridge_to_sdhc_request :$uint<64> $depth 2
 
 //sdhc to peripheral bridge response pipe
 $pipe sdhc_to_peripheral_bridge_response :$uint<32> $depth 2 
+
+// Data buffer inside the host controller for writing into sd card of size 512 bytes
+$pipe dataBufferTx :$uint<32> $depth 128
+// Data buffer inside the host controller for reading from sd card of size 512 bytes
+$pipe dataBufferRx :$uint<32> $depth 128
+
+
+//Pipe for sending Command 
+$pipe commandTx :$uint<48> $depth 1
+//Pipe for recieving Command 
+$pipe commandRx :$uint<48> $depth 1
+
+
+//Pipe for sending Data
+$pipe dataTx :$uint<8> $depth 512
+//Pipe for recieving Data 
+$pipe dataRx :$uint<8> $depth 512
 
 
 $module [sdhc_daemon] $in() $out() $is
@@ -75,7 +120,12 @@ $module [sdhc_daemon] $in() $out() $is
 			$guard(b0)
 				sdhcRegisters[((address & _h0000ff) + 3)] := data0
 			//Send back zero as acknowledgment
-			sdhc_to_peripheral_bridge_response:= 0
+			sdhc_to_peripheral_bridge_response:= ZERO_32
+			//When the most significant byte of the Command Register is written 
+			//Command should be sent 
+			addresscheck := (((address & _h0000ff) + 3) == _h0f)
+			$guard(addresscheck)
+				$call command_generator () ()
 		$else
 			
 			readdata3 := ($mux b3 sdhcRegisters[((address & _h0000ff) + 0)] ZERO_8)
@@ -86,10 +136,6 @@ $module [sdhc_daemon] $in() $out() $is
 			sdhc_to_peripheral_bridge_response := ($concat readdata3 readdata2 readdata1 readdata0)		
 			
 		$endif
-		//Make a database for every type of data bits
-		//Then check before read or write
-			
-				
 	
 
 
@@ -97,3 +143,26 @@ $module [sdhc_daemon] $in() $out() $is
 		$place[loopback]
 	}
 } 
+// Generating 48 bit command frame
+// Also storing the response from the SD card into the Response registers
+
+$module [command_generator] $in() $out() $is
+{
+	argumentVal3 := sdhcRegisters[{Argument+3}] 
+	argumentVal2 := sdhcRegisters[{Argument+2}] 
+	argumentVal1 := sdhcRegisters[{Argument+1}] 
+	argumentVal0 := sdhcRegisters[Argument]  
+	command40bits := ($concat ZERO_1 ONE_1 ($slice sdhcRegisters[{Command + 1}] 5 0) argumentVal3 argumentVal2 argumentVal1 argumentVal0)
+	$call generte_crc_7 (command40bits) (crc7)
+	command := ($concat command40bits crc7 ONE_1)
+	//Sending the commands to the Command transmission pipe
+	commandTx := command
+	//Recieving response from the SD card
+	response := commandRx
+	sdhcRegisters[Response0] := ($slice response 39 32)
+	sdhcRegisters[{Response0+1}] := ($slice response 31 24)
+	sdhcRegisters[{Response0+2}] := ($slice response 23 16)
+	sdhcRegisters[{Response0+3}] := ($slice response 15 8)
+
+
+}
