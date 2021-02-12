@@ -29,7 +29,7 @@ $storage sdhcRegisters: $array [REGISTERSETSIZE] $of $uint<8>
 
 
 //main thread: reads from the peripheral to sdhc request pipe
-//sends acknowledgment or data through sdhc to peripheral response pipe
+//sends acknowledgement or data through sdhc to peripheral response pipe
 //Decodes the address from read data and writes into the particular register 
 
 
