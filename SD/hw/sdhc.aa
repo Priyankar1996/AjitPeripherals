@@ -136,7 +136,34 @@ $module [sdhc_daemon] $in() $out() $is
 			sdhc_to_peripheral_bridge_response := ($concat readdata3 readdata2 readdata1 readdata0)		
 			
 		$endif
-		//sdhc operations.....
+		
+		// Modifies the content of the register based on conditions.
+		
+		// BLOCK-SIZE REGISTER.
+		// [14:12] Host SDMA Buffer Boundary
+		// [11:0] Transfer Block size
+
+		// BLOCKCOUNT REGISTER
+		// [15:0] BlockCount for current Transfer
+
+		// ARGUMENT REGISTER
+		// [31:0] Command Argument
+		
+		// TRANSFERMODE REGISTER
+		// [5] Multi/Single Block Select
+		// [4] Data Transfer Direction Select
+		// [3:2] Auto CMD Enable
+		// [1] BlockCount Enable
+		// [0] DMA Enable
+
+		// COMMAND REGISTER
+		// [13:8] Command Index
+		// [7:6] Command Type
+		// [5] Data Present Select
+		// [4] Command Index Check Enable
+		// [3] Command CRC Check Enable
+		// [1:0] Response Type Select
+
 
 		$place[loopback]
 	}
@@ -156,8 +183,63 @@ $module [command_generator] $in() $out() $is
 	//Sending the commands to the Command transmission pipe
 	commandTx := command
 	//Recieving response from the SD card
-	response := responseRx
+	$volatile response_type := ($slice sdhcRegisters[Command] 1 0) 
+	$if (response_type == 2) $then  //R1,R6,R7.
+		response := responseRx
+		$if ((sdhcRegisters[Command] & _h8) == 8) $then  //CRC Check Enable
+			$call generte_crc_7 ($slice response 47 8) (R1_6_7CRC)
+
+			 //This will assert the CommandCRCError Interrupt Status.
+			 $volatile CommandCRCError := (($mux (crc7 == R1_6_7CRC) _b00000000 _b00000010) & sdhcRegisters[ErrorInterruptStatusEnable])
+		$endif
+
+		$if ((sdhcRegisters[Command] & _h10) == 16) $then //Command Index Enable
+			$volatile commandIndexCheck := (($slice sdhcRegisters[{Command + 1}] 5 0) == ($slice response 45 40))
+
+			//This will assert the CommandIndexError Interrupt Status.
+			$volatile CommandIndexError:= (($mux commandIndexCheck _b00000000 _b00001000) & sdhcRegisters[ErrorInterruptStatusEnable])
+		$endif
+		sdhcRegisters[Response0] := ($slice response 39 32)
+		sdhcRegisters[{Response0+1}] := ($slice response 31 24)
+		sdhcRegisters[{Response0+2}] := ($slice response 23 16)
+		sdhcRegisters[{Response0+3}] := ($slice response 15 8)
+
+	$else $if(response_type == 1) $then //R2
+		response1 := responseRx
+		response2 := responseRx
+		response3 := responseRx
+
+		$volatile bigResponse := ($concat response1 response2 ($slice response3 47 8))
+
+		$volatile CID := ($slice bigResponse 127 8)
+		$volatile CID_CRC := ($slice bigResponse 7 1)
+		$if ((sdhcRegisters[Command] & _h8) == 8) $then  //CRC Check Enable
+			//$call generte_crc_7 ($slice response 47 8) (R2_CRC) -----CRC FOR 139bits------
+
+			 //This will assert the CommandCRCError Interrupt Status.
+			 $volatile CommandCRCError := (($mux (crc7 == R2_CRC) _b00000000 _b00000010) & sdhcRegisters[ErrorInterruptStatusEnable])
+		$endif
+
+		sdhcRegisters[Response0] := ($slice response 39 32)
+		sdhcRegisters[{Response0+1}] := ($slice response 31 24)
+		sdhcRegisters[{Response0+2}] := ($slice response 23 16)
+		sdhcRegisters[{Response0+3}] := ($slice response 15 8) //...12 more blocks. Need to be optimized.
+
+	$else $if(response_type == 0) $then
+				$null
+			$endif
+		$endif
+	$endif		
+	sdhcRegisters[ErrorInterruptStatus] := (CommandIndexError | CommandCRCError)
+
+
+
+
+
+
+		 
 	//Response type check
+
 	sdhcRegisters[Response0] := ($slice response 39 32)
 	sdhcRegisters[{Response0+1}] := ($slice response 31 24)
 	sdhcRegisters[{Response0+2}] := ($slice response 23 16)
@@ -187,10 +269,3 @@ $module [sdhc_register_write] $in(address:$uint<8> data:$uint<8>) $out() $is
 	$endswitch	
 
 }
-// For operations affecting the register values
-//$module [sdhc_internal_operations] $in() $out() $is
-//{
-	
-
-//}
-
