@@ -75,8 +75,8 @@ $pipe dataBufferRx :$uint<32> $depth 128
 
 //Pipe for sending Command 
 $pipe commandTx :$uint<48> $depth 1
-//Pipe for recieving Command 
-$pipe commandRx :$uint<48> $depth 1
+//Pipe for recieving response 
+$pipe responseRx :$uint<48> $depth 1
 
 
 //Pipe for sending Data
@@ -112,13 +112,13 @@ $module [sdhc_daemon] $in() $out() $is
 
 		$if(rwbar == 0) $then
 			$guard(b3)
-				sdhcRegisters[((address & _h0000ff) + 0)] := data3
-			$guard(b2)
-				sdhcRegisters[((address & _h0000ff) + 1)] := data2
+				$call sdhc_register_write (((address & _h0000ff) + 0)) ()
+			$guard(b2)	
+				$call sdhc_register_write (((address & _h0000ff) + 1)) ()
 			$guard(b1)
-				sdhcRegisters[((address & _h0000ff) + 2)] := data1
+				$call sdhc_register_write (((address & _h0000ff) + 2)) ()
 			$guard(b0)
-				sdhcRegisters[((address & _h0000ff) + 3)] := data0
+				$call sdhc_register_write (((address & _h0000ff) + 3)) ()
 			//Send back zero as acknowledgment
 			sdhc_to_peripheral_bridge_response:= ZERO_32
 			//When the most significant byte of the Command Register is written 
@@ -136,9 +136,7 @@ $module [sdhc_daemon] $in() $out() $is
 			sdhc_to_peripheral_bridge_response := ($concat readdata3 readdata2 readdata1 readdata0)		
 			
 		$endif
-	
-
-
+		//sdhc operations.....
 
 		$place[loopback]
 	}
@@ -158,11 +156,41 @@ $module [command_generator] $in() $out() $is
 	//Sending the commands to the Command transmission pipe
 	commandTx := command
 	//Recieving response from the SD card
-	response := commandRx
+	response := responseRx
+	//Response type check
 	sdhcRegisters[Response0] := ($slice response 39 32)
 	sdhcRegisters[{Response0+1}] := ($slice response 31 24)
 	sdhcRegisters[{Response0+2}] := ($slice response 23 16)
 	sdhcRegisters[{Response0+3}] := ($slice response 15 8)
+	//Command Index Check
+	//Command CRC Check
 
 
 }
+// Writing into the registers
+$module [sdhc_register_write] $in(address:$uint<8> data:$uint<8>) $out() $is
+{
+	$switch (address)
+	$when (BlockSize + 1) $then sdhcRegisters[address]:= (data & _h7f)
+
+	$when Transfer $then sdhcRegisters[address]:= (data & _h3f)
+	$when (Transfer + 1) $then sdhcRegisters[address]:= ZERO_8
+
+	$when Command $then sdhcRegisters[address]:= (data & _hfb)
+	$when (Command + 1) $then sdhcRegisters[address]:= (data & _3f)
+	
+	$when Response0 $then sdhcRegisters[address]:= ZERO_8
+	$when (Response0 + 1) $then sdhcRegisters[address] := ZER0_8
+
+	//For RW bits
+	$default sdhcRegisters[address]:= data
+	$endswitch	
+
+}
+// For operations affecting the register values
+//$module [sdhc_internal_operations] $in() $out() $is
+//{
+	
+
+//}
+
