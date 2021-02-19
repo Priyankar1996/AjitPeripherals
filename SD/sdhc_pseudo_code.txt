@@ -1,0 +1,52 @@
+------------------sdhc_daemon---------------------------
+request := periph_brdg_to_sdhc
+rwbar, bytemask, unused, address, data3, data2, data1, data0 := request //64
+b3, b2, b1, b0 := bytemask //4
+
+if(rwbar == 0)
+	if(b3) =>
+		write_register(address);
+	elsif(b2) =>
+		write_register(address + 1);
+	elsif(b1) =>
+		write_register(address + 2);
+	elsif(b0) =>
+		write_register(address + 3);
+	end if;
+	sdhc_to_periph_brdg := ZERO_32;
+	addr_check := 1 if (address == 12) else 0;
+	if (addr_check == 1) =>
+		generate_command;
+	end if;
+else
+	rdata3 := read_register(address) when (b3 == 1) else ZERO_8;
+	rdata2 := read_register(address + 1) when (b2 == 1) else ZERO_8;
+	rdata1 := read_register(address + 2) when (b1 == 1) else ZERO_8;
+	rdata0 := read_register(address + 3) when (b0 == 1) else ZERO_8;
+	sdhc_to_periph_brdg := (rdata3 & rdata2 & rdata1 & rdata0);
+end if;
+----------------generate_command_and_response_check-----------------------------------
+argval3 := read_register(argument + 3)
+argval2 := read_register(argument + 2)
+argval1 := read_register(argument + 1)
+argval0 := read_register(argument + 0)
+command40 := (0 & 1 & command_idx & argval3 & argval2 & argval1 & argval0)
+crc7 := generate_crc7(command40)
+command48 := (command40 & crc7 & 1)
+response_type := commandregister(1 downto 0);
+if (response_type == 2)   //48-bit response
+	recd_response := response_bus;
+	if(crc_check_enable)
+		R1_crc7 := generate_crc7(recd_response(47 downto 8));
+		if(command_crc != response_crc) => enable_crc_error_interrupt;
+	if(cmd_idx_check_enable)
+		if (command index not equal) => enable_cmd_idx_error_interrupt;
+if (response_type == 1)   //136-bit response
+	bigResponse := response_bus;
+	CID := bigResponse(127 downto 8);
+	CID_CRC := bigResponse(7 downto 0);
+	if(crc_check_enable)
+		R2_crc7 := generate_crc7(bigResponse(47 downto 8));
+		if(command_crc != response_crc) => enable_crc_error_interrupt;
+	if(cmd_idx_check_enable)
+		if (command index not equal) => enable_cmd_idx_error_interrupt;
