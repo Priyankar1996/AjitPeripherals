@@ -1,3 +1,6 @@
+//Top Module 
+
+
 $module [sdhc_daemon] $in() $out() $is
 {
 
@@ -13,6 +16,7 @@ $module [sdhc_daemon] $in() $out() $is
 	//send back zero as acknowledgment through the response pipe
 	//On read from register send back data through response pipe
 
+	//Initializing Global Flags
 	SDHC_to_IRC_INT := ZERO_1
 	normalInterruptFlag1:= _hFF
 	normalInterruptFlag2:= _hFF
@@ -33,7 +37,6 @@ $module [sdhc_daemon] $in() $out() $is
 		//$dopipeline $depth 10 $fullrate
 		
 		$merge $entry loopback 
-			//$phi txBufferPointer:= ($bitcast ($uint<10>) 0) $on $entry nextTxBufferPointer $on $loopback
 		$endmerge
 
 		//read peripheral bridge request
@@ -109,6 +112,7 @@ $module [sdhc_daemon] $in() $out() $is
 				$if(txBufferPointer == 512)$then
 					//All Blocks are Written 
 					sdhcRegisters[{PresentState + 1}]:= (sdhcRegisters[{PresentState + 1}] & _hfb)
+					//sdhcRegisters[{PresentState +1}] [] 2:= ZERO_1
 					//Block Count Enable or Disable is checked in Transfer Mode register
 					singleMultipleBlock:= ($bitreduce | (sdhcRegisters[Transfer] & _h20))//1:Multiple Block 0:Single Block
 					blockCountEnable:= (($bitreduce | (sdhcRegisters[Transfer] & _h02)) & singleMultipleBlock)//1-Enable 0-Disable only needed for multipleblock
