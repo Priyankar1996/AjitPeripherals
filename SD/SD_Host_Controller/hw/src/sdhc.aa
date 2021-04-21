@@ -1,0 +1,195 @@
+$module [sdhc_daemon] $in() $out() $is
+{
+
+	//read the request pipe
+	//split the data into the following 
+	// 63: rwbar
+	// 62-59: bytemask
+	// 55-32: address
+	// 31-00: data
+	//decide whether to read or write
+	//decode register array index from address
+	//On completion of write first write to the register then
+	//send back zero as acknowledgment through the response pipe
+	//On read from register send back data through response pipe
+
+	SDHC_to_IRC_INT := ZERO_1
+	normalInterruptFlag1:= _hFF
+	normalInterruptFlag2:= _hFF
+	errorInterruptFlag1:= _hFF
+	errorInterruptFlag2:= _hFF
+	txBufferPointer:= ($bitcast ($uint<10>) 0)
+	rxBufferPointer:= ($bitcast ($uint<10>) 0)
+	dataRxEnrty:= ZERO_1
+	dataRxEnrty1:= ZERO_1
+	dataRxEnrty2:= ZERO_1
+	dataErrorInterruptStatus:=ZERO_8
+
+	//Initialize The registers
+	$call resetRegisters (ZERO_2) ()
+	
+	$branchblock[loop]{
+
+		//$dopipeline $depth 10 $fullrate
+		
+		$merge $entry loopback 
+			//$phi txBufferPointer:= ($bitcast ($uint<10>) 0) $on $entry nextTxBufferPointer $on $loopback
+		$endmerge
+
+		//read peripheral bridge request
+		request := peripheral_bridge_to_sdhc_request 
+		
+		$volatile $split (request 1 4 3 16 8 8 8 8 8) (rwbar bytemask unused addressunused address data3 data2 data1 data0)
+		//Split the bytemask
+		$volatile $split (bytemask 1 1 1 1) (b3 b2 b1 b0)
+		//$rreport(sdhc_daemon_up f request rwbar bytemask address data3 data2 data1 data0)
+
+		$if(rwbar == 0) $then
+			//$rreport( sdhc_daemon following address data3 data2 data1 data0 bytemask rwbar)
+			$guard(b3)
+				$call sdhc_register_write (address data3) ()
+			$guard(b2)	
+				$call sdhc_register_write ((address + 1) data2) ()
+			$guard(b1)
+				$call sdhc_register_write ((address + 2) data1) ()
+			$guard(b0)
+				$call sdhc_register_write ((address + 3) data0) ()
+			//Send back zero as acknowledgment
+			sdhc_to_peripheral_bridge_response:= ZERO_32
+
+			//Check for SoftwareReset
+			$if((address + 3) == SoftwareReset) $then
+				$if( sdhcRegisters[SoftwareReset] [] 0 ) $then
+					$call resetRegisters (ZERO_2) ()
+				$endif
+				$if( sdhcRegisters[SoftwareReset] [] 1 ) $then
+					$call resetRegisters (ONE_2) ()
+				$endif
+				$if ( sdhcRegisters[SoftwareReset] [] 2 )$then
+					$call resetRegisters (($bitcast ($uint<2>) 2)) ()
+				$endif	
+			$endif			
+			//When the most significant byte of the Command Register is written 
+			//Command should be sent 
+			$volatile commandInhibit_CMD:= ((sdhcRegisters[PresentState] & _h01) == 0)
+			$volatile addresscheck := (((address + 3) == _h0f) & b0)
+			$volatile presentState:= ((sdhcRegisters[PresentState]>>1) << 1)
+			$if(addresscheck & commandInhibit_CMD) $then
+				sdhcRegisters[PresentState]:= (presentState | _h01) // Writing 1 to commandInhibit(CMD)
+				dataRxEnrty1:= ZERO_1
+				dataRxEnrty2:= ZERO_1
+				$call command_generator () (normalInterruptStatusVar1 normalInterruptStatusVar2 errorInterruptStatusVar1 errorInterruptStatusVar2 dataErrorInterruptStatusVar1 dataTransferComplete)
+				normalInterruptFlag1:= _hFF
+				normalInterruptFlag2:= _hFF
+				errorInterruptFlag1 := _hFF
+				errorInterruptFlag2 := _hFF
+			$endif
+			//Buffer Read Enable
+			$if(rxBufferPointer > 0)$then
+				sdhcRegisters[{PresentState + 1}]:= (sdhcRegisters[{PresentState + 1}] | _h08)
+				bufferReadReady:= (ZERO_8 | _h20)
+				normalInterruptFlag1:= (normalInterruptFlag1 | _h20)
+			$endif
+			//Buffer Write Enable
+			$if(txBufferPointer<512)$then
+				sdhcRegisters[{PresentState + 1}]:= (sdhcRegisters[{PresentState + 1}] | _h04)
+				bufferWriteReady:= (ZERO_8 | _h10)
+				normalInterruptFlag1:= (normalInterruptFlag1 | _h10)
+			$endif
+			//Check if BufferDataPort is written
+			$volatile bufferDataPortCheck := (address  == 32)
+			$if((bufferDataPortCheck == 1) & (txBufferPointer<512))$then//txBufferPointer nedded ???
+				//$call dataTx () ()
+				dataBufferTx:= sdhcRegisters[{BufferDataPort + 0}]
+				dataBufferTx:= sdhcRegisters[{BufferDataPort + 1}]
+				dataBufferTx:= sdhcRegisters[{BufferDataPort + 2}]
+				dataBufferTx:= sdhcRegisters[{BufferDataPort + 3}]
+				txBufferPointer:= (txBufferPointer + 4)
+				//$rreport(Buffer port txBufferPointer)
+				$if(txBufferPointer == 512)$then
+					//All Blocks are Written 
+					sdhcRegisters[{PresentState + 1}]:= (sdhcRegisters[{PresentState + 1}] & _hfb)
+					//Block Count Enable or Disable is checked in Transfer Mode register
+					singleMultipleBlock:= ($bitreduce | (sdhcRegisters[Transfer] & _h20))//1:Multiple Block 0:Single Block
+					blockCountEnable:= (($bitreduce | (sdhcRegisters[Transfer] & _h02)) & singleMultipleBlock)//1-Enable 0-Disable only needed for multipleblock
+					blockCount:= (sdhcRegisters[{BlockCount +1}] && sdhcRegisters[BlockCount])
+					blockCountTrue:= (blockCount == 1)//1:Last block 
+					lastBlock:= ((~singleMultipleBlock) | (blockCountEnable & blockCountTrue)) //1: last Block sent 0:Not last Block
+					$call dataTx (lastBlock blockCountEnable blockCount) (blockCountNext transferComplete)
+					sdhcRegisters[{BlockCount + 1}]:= ($slice blockCountNext 15 8)
+					sdhcRegisters[BlockCount]:= ($slice blockCountNext 7 0)
+					//transferComplete := (ZERO_8 | _h02)
+					normalInterruptFlag1:= (normalInterruptFlag1 | _h02)
+					errorInterruptFlag1:= (errorInterruptFlag1 | _h60)
+				$endif
+			$endif
+
+			
+		$else
+			$volatile readBufferDataPortCheck := (address  == 32)
+			
+			//$rreport(Read Data readBufferDataPortCheck readdata3 readdata2 readdata1 readdata0 rxBufferPointer)
+			$if((readBufferDataPortCheck ==1) & (rxBufferPointer != 0))$then
+				sdhcRegisters[BufferDataPort]:= dataBufferRx
+				sdhcRegisters[{BufferDataPort +1}]:= dataBufferRx
+				sdhcRegisters[{BufferDataPort +2}]:= dataBufferRx
+				sdhcRegisters[{BufferDataPort +3}]:= dataBufferRx
+				rxBufferPointer:= (rxBufferPointer - 4)
+				singleMultipleReadBlock:= ($bitreduce | (sdhcRegisters[Transfer] & _h20))//1:multipleblock 0: single block
+				//$rreport(single Multiple singleMultipleReadBlock rxBufferPointer)
+				$if(rxBufferPointer == 0)$then
+					sdhcRegisters[{PresentState + 1}]:= (sdhcRegisters[{PresentState + 1}] & _hf7)
+					$if(singleMultipleReadBlock == 1)$then
+						readBlockCountEnable:= (($bitreduce | (sdhcRegisters[Transfer] & _h02)) & singleMultipleBlock)//1-Enable 0-Disable only needed for multipleblock
+						readBlockCount:= (sdhcRegisters[{BlockCount +1}] && sdhcRegisters[BlockCount])
+						readBlockCountTrue:= (readBlockCount == 1)//1:Last block
+						readLastBlock:= (readBlockCountEnable & readBlockCountTrue) //1: last Block sent 0:Not last Block
+						$if(readBlockCount !=0)$then
+							newReadBlockCount:= (readBlockCount -1)
+							$call dataRx (readLastBlock) (dataErrorInterruptStatusVar)
+							dataRxEnrty1:= ZERO_1
+							dataRxEnrty2:= ONE_1
+							sdhcRegisters[{BlockCount + 1}]:= ($slice newReadBlockCount 15 8)
+							sdhcRegisters[BlockCount]:= ($slice newReadBlockCount 7 0)
+							readDataTransferComplete:= ($mux readLastBlock ($bitcast ($uint<8>)2) ZERO_8)
+							normalInterruptFlag1:= (normalInterruptFlag1 | _h02)
+							errorInterruptFlag1:= (errorInterruptFlag1 | _h60)
+						$endif
+					$endif
+				$endif
+				
+			$endif	
+			readdata3 := ($mux b3 sdhcRegisters[(address + 0)] ZERO_8)
+			readdata2 := ($mux b2 sdhcRegisters[(address + 1)] ZERO_8)
+			readdata1 := ($mux b1 sdhcRegisters[(address + 2)] ZERO_8)
+			readdata0 := ($mux b0 sdhcRegisters[(address + 3)] ZERO_8)
+			//Send back the read value from the registers
+			sdhc_to_peripheral_bridge_response := ($concat readdata3 readdata2 readdata1 readdata0)	
+			
+		$endif
+
+
+		//Error Interrupt Status and Normal Interrupt Status stored
+			//dataErrorInterruptStatus:= ($mux dataRxEnrty (dataErrorInterruptStatusVar| dataErrorInterruptStatusVar1) ZERO_8)
+			dataErrorInterruptStatus:= ($excmux dataRxEnrty1 dataErrorInterruptStatusVar1 dataRxEnrty2 dataErrorInterruptStatusVar ((~dataRxEnrty1)&(~dataRxEnrty2)) ZERO_8)
+			sdhcRegisters[ErrorInterruptStatus]:= (((sdhcRegisters[ErrorInterruptStatus] |  ($reduce | dataErrorInterruptStatus errorInterruptStatusVar1 )) & errorInterruptFlag1) & sdhcRegisters[ErrorInterruptStatusEnable])
+			sdhcRegisters[{ErrorInterruptStatus +1}]:= (((sdhcRegisters[{ErrorInterruptStatus + 1}] | errorInterruptStatusVar2) & errorInterruptFlag2) & sdhcRegisters[{ErrorInterruptStatusEnable + 1}])
+			errorInterruptBit :=((($bitreduce | sdhcRegisters[ErrorInterruptStatus]) | ($bitreduce | sdhcRegisters[{ErrorInterruptStatus + 1}]) ) && ($bitcast ($uint<7>)0))
+			$volatile checkInterruptEnable :=(($bitreduce | sdhcRegisters[NormalInterruptStatusEnable]) | ($bitreduce | sdhcRegisters[{NormalInterruptStatusEnable + 1}]) )
+			$if(checkInterruptEnable == 1) $then
+				interrupt:= ($reduce & ($reduce | readDataTransferComplete dataTransferComplete transferComplete bufferReadReady bufferWriteReady normalInterruptStatusVar1) sdhcRegisters[NormalInterruptStatusEnable] normalInterruptFlag1)
+				sdhcRegisters[NormalInterruptStatus]:= interrupt
+				sdhcRegisters[{NormalInterruptStatus + 1}]:= errorInterruptBit
+				interruptLine:= (sdhcRegisters[NormalInterruptSignalEnable] & interrupt)
+				errorInterruptLine := ((sdhcRegisters[ErrorInterruptStatus] & sdhcRegisters[ErrorInterruptSignalEnable]) | (sdhcRegisters[{ErrorInterruptStatus + 1}] & sdhcRegisters[{ErrorInterruptSignalEnable + 1}]))
+				SDHC_to_IRC_INT:=(($bitreduce | interruptLine) | ($bitreduce | errorInterruptLine))
+			$else
+				sdhcRegisters[NormalInterruptStatus]:= ZERO_8
+				SDHC_to_IRC_INT:= ZERO_1
+			$endif
+			$rreport(int check dataErrorInterruptStatus errorInterruptStatusVar1 errorInterruptFlag1)
+		
+		$place[loopback]
+		//$while 1		
+	}
+} 

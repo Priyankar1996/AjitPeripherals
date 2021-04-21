@@ -1,0 +1,658 @@
+Info:pThreadUtils: started thread sdhc_daemon
+Info:pThreadUtils: started thread sdcard
+HOST:Capabilities reg = 520648a 
+HOST:Base Clock Frequency For SD Clock is 100 
+SD:Command=0 name=GO_IDLE_STATE
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+SD:Command=8 name=SEND_IF_COND
+000010000000000000000000000000011010101000010011
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+HOST:CMD8 Response is 1aa
+SD:Command=55 name=APP_CMD
+001101110000000000000000000000000000000011110001
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+HOST:CMD55 Response is 0
+SD:Command=41 name=SD_SENDOPCOND
+001111110100000011111111100000000000000011111111
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:OCR = 40ff8000
+SD:Command=55 name=APP_CMD
+001101110000000000000000000000000000000011110001
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+SD:Command=41 name=SD_SENDOPCOND
+001111111100000111111111100000000000000011111111
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:SDHC or SDXC
+SD:Command=2 name=ALL_SEND_CID
+001111110000001101010011010001000101001101010011001100000011100001000111100000000011110000000010001111000110000100000000111001100101001
+HOST:interrupt 1
+HOST:Error Interrupt status is 2
+HOST:Normal Interrupt status is 8001
+HOST:Command Complete
+HOST:The response is 353445353303847803c023c6100e6
+SD:Command=3 name=SEND_REL_ADDR
+000000110000000000000001000000000000010010100011
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+HOST:RCA = 1
+SD:Command=7 name=CARD_SELECT
+000001110000000000000000000000000000011001111011
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+HOST:interrupt 1
+HOST:Normal Interrupt status is 2
+HOST:Checking Transfer Complete for R1b
+SD:Command=55 name=APP_CMD
+001101110000000000000000000000000000100001100001
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+SD:Command=6 name=SWITCH_FUNC
+000001100000000000000000000000000000100011101011
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+Succesfully InitializedSD:Command=24 name=WRITE_SINGLE
+000110000000000000000000000000000000100001101011
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+HOST:interrupt 1
+HOST:Normal Interrupt status is 10
+HOST:Buffer Write Ready Interrupt occured,ready to write buffer
+HOST:Buffer Write Ready Interrupt cleared
+HOST:interrupt 1
+HOST:Normal Interrupt status is 2
+HOST:Transfer Complete Interrupt Occurred
+SD:Command=17 name=READ_SINGLE
+000100010000000000000000000000000000100001010001
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+HOST:interrupt 1
+HOST:Normal Interrupt status is 20
+HOST:Buffer Read Ready Interrupt occured,ready to read buffer
+HOST:Buffer Read Ready Interrupt cleared
+HOST: Blockdata[0] = 0
+HOST: Blockdata[1] = 1
+HOST: Blockdata[2] = 2
+HOST: Blockdata[3] = 3
+HOST: Blockdata[4] = 4
+HOST: Blockdata[5] = 5
+HOST: Blockdata[6] = 6
+HOST: Blockdata[7] = 7
+HOST: Blockdata[8] = 8
+HOST: Blockdata[9] = 9
+HOST: Blockdata[10] = 10
+HOST: Blockdata[11] = 11
+HOST: Blockdata[12] = 12
+HOST: Blockdata[13] = 13
+HOST: Blockdata[14] = 14
+HOST: Blockdata[15] = 15
+HOST: Blockdata[16] = 16
+HOST: Blockdata[17] = 17
+HOST: Blockdata[18] = 18
+HOST: Blockdata[19] = 19
+HOST: Blockdata[20] = 20
+HOST: Blockdata[21] = 21
+HOST: Blockdata[22] = 22
+HOST: Blockdata[23] = 23
+HOST: Blockdata[24] = 24
+HOST: Blockdata[25] = 25
+HOST: Blockdata[26] = 26
+HOST: Blockdata[27] = 27
+HOST: Blockdata[28] = 28
+HOST: Blockdata[29] = 29
+HOST: Blockdata[30] = 30
+HOST: Blockdata[31] = 31
+HOST: Blockdata[32] = 32
+HOST: Blockdata[33] = 33
+HOST: Blockdata[34] = 34
+HOST: Blockdata[35] = 35
+HOST: Blockdata[36] = 36
+HOST: Blockdata[37] = 37
+HOST: Blockdata[38] = 38
+HOST: Blockdata[39] = 39
+HOST: Blockdata[40] = 40
+HOST: Blockdata[41] = 41
+HOST: Blockdata[42] = 42
+HOST: Blockdata[43] = 43
+HOST: Blockdata[44] = 44
+HOST: Blockdata[45] = 45
+HOST: Blockdata[46] = 46
+HOST: Blockdata[47] = 47
+HOST: Blockdata[48] = 48
+HOST: Blockdata[49] = 49
+HOST: Blockdata[50] = 50
+HOST: Blockdata[51] = 51
+HOST: Blockdata[52] = 52
+HOST: Blockdata[53] = 53
+HOST: Blockdata[54] = 54
+HOST: Blockdata[55] = 55
+HOST: Blockdata[56] = 56
+HOST: Blockdata[57] = 57
+HOST: Blockdata[58] = 58
+HOST: Blockdata[59] = 59
+HOST: Blockdata[60] = 60
+HOST: Blockdata[61] = 61
+HOST: Blockdata[62] = 62
+HOST: Blockdata[63] = 63
+HOST: Blockdata[64] = 64
+HOST: Blockdata[65] = 65
+HOST: Blockdata[66] = 66
+HOST: Blockdata[67] = 67
+HOST: Blockdata[68] = 68
+HOST: Blockdata[69] = 69
+HOST: Blockdata[70] = 70
+HOST: Blockdata[71] = 71
+HOST: Blockdata[72] = 72
+HOST: Blockdata[73] = 73
+HOST: Blockdata[74] = 74
+HOST: Blockdata[75] = 75
+HOST: Blockdata[76] = 76
+HOST: Blockdata[77] = 77
+HOST: Blockdata[78] = 78
+HOST: Blockdata[79] = 79
+HOST: Blockdata[80] = 80
+HOST: Blockdata[81] = 81
+HOST: Blockdata[82] = 82
+HOST: Blockdata[83] = 83
+HOST: Blockdata[84] = 84
+HOST: Blockdata[85] = 85
+HOST: Blockdata[86] = 86
+HOST: Blockdata[87] = 87
+HOST: Blockdata[88] = 88
+HOST: Blockdata[89] = 89
+HOST: Blockdata[90] = 90
+HOST: Blockdata[91] = 91
+HOST: Blockdata[92] = 92
+HOST: Blockdata[93] = 93
+HOST: Blockdata[94] = 94
+HOST: Blockdata[95] = 95
+HOST: Blockdata[96] = 96
+HOST: Blockdata[97] = 97
+HOST: Blockdata[98] = 98
+HOST: Blockdata[99] = 99
+HOST: Blockdata[100] = 100
+HOST: Blockdata[101] = 101
+HOST: Blockdata[102] = 102
+HOST: Blockdata[103] = 103
+HOST: Blockdata[104] = 104
+HOST: Blockdata[105] = 105
+HOST: Blockdata[106] = 106
+HOST: Blockdata[107] = 107
+HOST: Blockdata[108] = 108
+HOST: Blockdata[109] = 109
+HOST: Blockdata[110] = 110
+HOST: Blockdata[111] = 111
+HOST: Blockdata[112] = 112
+HOST: Blockdata[113] = 113
+HOST: Blockdata[114] = 114
+HOST: Blockdata[115] = 115
+HOST: Blockdata[116] = 116
+HOST: Blockdata[117] = 117
+HOST: Blockdata[118] = 118
+HOST: Blockdata[119] = 119
+HOST: Blockdata[120] = 120
+HOST: Blockdata[121] = 121
+HOST: Blockdata[122] = 122
+HOST: Blockdata[123] = 123
+HOST: Blockdata[124] = 124
+HOST: Blockdata[125] = 125
+HOST: Blockdata[126] = 126
+HOST: Blockdata[127] = 127
+HOST:interrupt 1
+HOST:Normal Interrupt status is 2
+SD:Command=55 name=APP_CMD
+001101110000000000000000000000000000100001100001
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+SD:Command=23 name=SET_BLOCKCNT
+000101110000000000000000000000000000100000101011
+SD:Erased
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+SD:Command=25 name=WRITE_MULTI
+000110010000000000000000000000000000100000000111
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+HOST:interrupt 1
+HOST:Normal Interrupt status is 10
+HOST:Buffer Write Ready Interrupt occured,ready to write buffer
+HOST:Buffer Write Ready Interrupt cleared
+HOST:interrupt 1
+HOST:Normal Interrupt status is 10
+HOST:Buffer Write Ready Interrupt occured,ready to write buffer
+HOST:Buffer Write Ready Interrupt cleared
+HOST:interrupt 1
+HOST:Normal Interrupt status is 10
+HOST:Buffer Write Ready Interrupt occured,ready to write buffer
+HOST:Buffer Write Ready Interrupt cleared
+HOST:interrupt 1
+HOST:Normal Interrupt status is 2
+HOST:Transfer Complete Interrupt Occurred
+SD:Command=23 name=SET_BLOCKCNT
+000101110000000000000000000000000000100000101011
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+SD:Command=18 name=READ_MULTI
+000100100000000000000000000000000000100011100101
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete
+HOST:interrupt 1
+HOST:Normal Interrupt status is 20
+HOST:Buffer Read Ready Interrupt occured,ready to read buffer
+HOST:Buffer Read Ready Interrupt cleared
+HOST: Blockdata[0] = 1
+HOST: Blockdata[1] = 1
+HOST: Blockdata[2] = 1
+HOST: Blockdata[3] = 1
+HOST: Blockdata[4] = 1
+HOST: Blockdata[5] = 1
+HOST: Blockdata[6] = 1
+HOST: Blockdata[7] = 1
+HOST: Blockdata[8] = 1
+HOST: Blockdata[9] = 1
+HOST: Blockdata[10] = 1
+HOST: Blockdata[11] = 1
+HOST: Blockdata[12] = 1
+HOST: Blockdata[13] = 1
+HOST: Blockdata[14] = 1
+HOST: Blockdata[15] = 1
+HOST: Blockdata[16] = 1
+HOST: Blockdata[17] = 1
+HOST: Blockdata[18] = 1
+HOST: Blockdata[19] = 1
+HOST: Blockdata[20] = 1
+HOST: Blockdata[21] = 1
+HOST: Blockdata[22] = 1
+HOST: Blockdata[23] = 1
+HOST: Blockdata[24] = 1
+HOST: Blockdata[25] = 1
+HOST: Blockdata[26] = 1
+HOST: Blockdata[27] = 1
+HOST: Blockdata[28] = 1
+HOST: Blockdata[29] = 1
+HOST: Blockdata[30] = 1
+HOST: Blockdata[31] = 1
+HOST: Blockdata[32] = 1
+HOST: Blockdata[33] = 1
+HOST: Blockdata[34] = 1
+HOST: Blockdata[35] = 1
+HOST: Blockdata[36] = 1
+HOST: Blockdata[37] = 1
+HOST: Blockdata[38] = 1
+HOST: Blockdata[39] = 1
+HOST: Blockdata[40] = 1
+HOST: Blockdata[41] = 1
+HOST: Blockdata[42] = 1
+HOST: Blockdata[43] = 1
+HOST: Blockdata[44] = 1
+HOST: Blockdata[45] = 1
+HOST: Blockdata[46] = 1
+HOST: Blockdata[47] = 1
+HOST: Blockdata[48] = 1
+HOST: Blockdata[49] = 1
+HOST: Blockdata[50] = 1
+HOST: Blockdata[51] = 1
+HOST: Blockdata[52] = 1
+HOST: Blockdata[53] = 1
+HOST: Blockdata[54] = 1
+HOST: Blockdata[55] = 1
+HOST: Blockdata[56] = 1
+HOST: Blockdata[57] = 1
+HOST: Blockdata[58] = 1
+HOST: Blockdata[59] = 1
+HOST: Blockdata[60] = 1
+HOST: Blockdata[61] = 1
+HOST: Blockdata[62] = 1
+HOST: Blockdata[63] = 1
+HOST: Blockdata[64] = 1
+HOST: Blockdata[65] = 1
+HOST: Blockdata[66] = 1
+HOST: Blockdata[67] = 1
+HOST: Blockdata[68] = 1
+HOST: Blockdata[69] = 1
+HOST: Blockdata[70] = 1
+HOST: Blockdata[71] = 1
+HOST: Blockdata[72] = 1
+HOST: Blockdata[73] = 1
+HOST: Blockdata[74] = 1
+HOST: Blockdata[75] = 1
+HOST: Blockdata[76] = 1
+HOST: Blockdata[77] = 1
+HOST: Blockdata[78] = 1
+HOST: Blockdata[79] = 1
+HOST: Blockdata[80] = 1
+HOST: Blockdata[81] = 1
+HOST: Blockdata[82] = 1
+HOST: Blockdata[83] = 1
+HOST: Blockdata[84] = 1
+HOST: Blockdata[85] = 1
+HOST: Blockdata[86] = 1
+HOST: Blockdata[87] = 1
+HOST: Blockdata[88] = 1
+HOST: Blockdata[89] = 1
+HOST: Blockdata[90] = 1
+HOST: Blockdata[91] = 1
+HOST: Blockdata[92] = 1
+HOST: Blockdata[93] = 1
+HOST: Blockdata[94] = 1
+HOST: Blockdata[95] = 1
+HOST: Blockdata[96] = 1
+HOST: Blockdata[97] = 1
+HOST: Blockdata[98] = 1
+HOST: Blockdata[99] = 1
+HOST: Blockdata[100] = 1
+HOST: Blockdata[101] = 1
+HOST: Blockdata[102] = 1
+HOST: Blockdata[103] = 1
+HOST: Blockdata[104] = 1
+HOST: Blockdata[105] = 1
+HOST: Blockdata[106] = 1
+HOST: Blockdata[107] = 1
+HOST: Blockdata[108] = 1
+HOST: Blockdata[109] = 1
+HOST: Blockdata[110] = 1
+HOST: Blockdata[111] = 1
+HOST: Blockdata[112] = 1
+HOST: Blockdata[113] = 1
+HOST: Blockdata[114] = 1
+HOST: Blockdata[115] = 1
+HOST: Blockdata[116] = 1
+HOST: Blockdata[117] = 1
+HOST: Blockdata[118] = 1
+HOST: Blockdata[119] = 1
+HOST: Blockdata[120] = 1
+HOST: Blockdata[121] = 1
+HOST: Blockdata[122] = 1
+HOST: Blockdata[123] = 1
+HOST: Blockdata[124] = 1
+HOST: Blockdata[125] = 1
+HOST: Blockdata[126] = 1
+HOST: Blockdata[127] = 1
+HOST:interrupt 1
+HOST:Normal Interrupt status is 20
+HOST:Buffer Read Ready Interrupt occured,ready to read buffer
+HOST:Buffer Read Ready Interrupt cleared
+HOST: Blockdata[0] = 2
+HOST: Blockdata[1] = 2
+HOST: Blockdata[2] = 2
+HOST: Blockdata[3] = 2
+HOST: Blockdata[4] = 2
+HOST: Blockdata[5] = 2
+HOST: Blockdata[6] = 2
+HOST: Blockdata[7] = 2
+HOST: Blockdata[8] = 2
+HOST: Blockdata[9] = 2
+HOST: Blockdata[10] = 2
+HOST: Blockdata[11] = 2
+HOST: Blockdata[12] = 2
+HOST: Blockdata[13] = 2
+HOST: Blockdata[14] = 2
+HOST: Blockdata[15] = 2
+HOST: Blockdata[16] = 2
+HOST: Blockdata[17] = 2
+HOST: Blockdata[18] = 2
+HOST: Blockdata[19] = 2
+HOST: Blockdata[20] = 2
+HOST: Blockdata[21] = 2
+HOST: Blockdata[22] = 2
+HOST: Blockdata[23] = 2
+HOST: Blockdata[24] = 2
+HOST: Blockdata[25] = 2
+HOST: Blockdata[26] = 2
+HOST: Blockdata[27] = 2
+HOST: Blockdata[28] = 2
+HOST: Blockdata[29] = 2
+HOST: Blockdata[30] = 2
+HOST: Blockdata[31] = 2
+HOST: Blockdata[32] = 2
+HOST: Blockdata[33] = 2
+HOST: Blockdata[34] = 2
+HOST: Blockdata[35] = 2
+HOST: Blockdata[36] = 2
+HOST: Blockdata[37] = 2
+HOST: Blockdata[38] = 2
+HOST: Blockdata[39] = 2
+HOST: Blockdata[40] = 2
+HOST: Blockdata[41] = 2
+HOST: Blockdata[42] = 2
+HOST: Blockdata[43] = 2
+HOST: Blockdata[44] = 2
+HOST: Blockdata[45] = 2
+HOST: Blockdata[46] = 2
+HOST: Blockdata[47] = 2
+HOST: Blockdata[48] = 2
+HOST: Blockdata[49] = 2
+HOST: Blockdata[50] = 2
+HOST: Blockdata[51] = 2
+HOST: Blockdata[52] = 2
+HOST: Blockdata[53] = 2
+HOST: Blockdata[54] = 2
+HOST: Blockdata[55] = 2
+HOST: Blockdata[56] = 2
+HOST: Blockdata[57] = 2
+HOST: Blockdata[58] = 2
+HOST: Blockdata[59] = 2
+HOST: Blockdata[60] = 2
+HOST: Blockdata[61] = 2
+HOST: Blockdata[62] = 2
+HOST: Blockdata[63] = 2
+HOST: Blockdata[64] = 2
+HOST: Blockdata[65] = 2
+HOST: Blockdata[66] = 2
+HOST: Blockdata[67] = 2
+HOST: Blockdata[68] = 2
+HOST: Blockdata[69] = 2
+HOST: Blockdata[70] = 2
+HOST: Blockdata[71] = 2
+HOST: Blockdata[72] = 2
+HOST: Blockdata[73] = 2
+HOST: Blockdata[74] = 2
+HOST: Blockdata[75] = 2
+HOST: Blockdata[76] = 2
+HOST: Blockdata[77] = 2
+HOST: Blockdata[78] = 2
+HOST: Blockdata[79] = 2
+HOST: Blockdata[80] = 2
+HOST: Blockdata[81] = 2
+HOST: Blockdata[82] = 2
+HOST: Blockdata[83] = 2
+HOST: Blockdata[84] = 2
+HOST: Blockdata[85] = 2
+HOST: Blockdata[86] = 2
+HOST: Blockdata[87] = 2
+HOST: Blockdata[88] = 2
+HOST: Blockdata[89] = 2
+HOST: Blockdata[90] = 2
+HOST: Blockdata[91] = 2
+HOST: Blockdata[92] = 2
+HOST: Blockdata[93] = 2
+HOST: Blockdata[94] = 2
+HOST: Blockdata[95] = 2
+HOST: Blockdata[96] = 2
+HOST: Blockdata[97] = 2
+HOST: Blockdata[98] = 2
+HOST: Blockdata[99] = 2
+HOST: Blockdata[100] = 2
+HOST: Blockdata[101] = 2
+HOST: Blockdata[102] = 2
+HOST: Blockdata[103] = 2
+HOST: Blockdata[104] = 2
+HOST: Blockdata[105] = 2
+HOST: Blockdata[106] = 2
+HOST: Blockdata[107] = 2
+HOST: Blockdata[108] = 2
+HOST: Blockdata[109] = 2
+HOST: Blockdata[110] = 2
+HOST: Blockdata[111] = 2
+HOST: Blockdata[112] = 2
+HOST: Blockdata[113] = 2
+HOST: Blockdata[114] = 2
+HOST: Blockdata[115] = 2
+HOST: Blockdata[116] = 2
+HOST: Blockdata[117] = 2
+HOST: Blockdata[118] = 2
+HOST: Blockdata[119] = 2
+HOST: Blockdata[120] = 2
+HOST: Blockdata[121] = 2
+HOST: Blockdata[122] = 2
+HOST: Blockdata[123] = 2
+HOST: Blockdata[124] = 2
+HOST: Blockdata[125] = 2
+HOST: Blockdata[126] = 2
+HOST: Blockdata[127] = 2
+HOST:interrupt 1
+HOST:Normal Interrupt status is 20
+HOST:Buffer Read Ready Interrupt occured,ready to read buffer
+HOST:Buffer Read Ready Interrupt cleared
+HOST: Blockdata[0] = 3
+HOST: Blockdata[1] = 3
+HOST: Blockdata[2] = 3
+HOST: Blockdata[3] = 3
+HOST: Blockdata[4] = 3
+HOST: Blockdata[5] = 3
+HOST: Blockdata[6] = 3
+HOST: Blockdata[7] = 3
+HOST: Blockdata[8] = 3
+HOST: Blockdata[9] = 3
+HOST: Blockdata[10] = 3
+HOST: Blockdata[11] = 3
+HOST: Blockdata[12] = 3
+HOST: Blockdata[13] = 3
+HOST: Blockdata[14] = 3
+HOST: Blockdata[15] = 3
+HOST: Blockdata[16] = 3
+HOST: Blockdata[17] = 3
+HOST: Blockdata[18] = 3
+HOST: Blockdata[19] = 3
+HOST: Blockdata[20] = 3
+HOST: Blockdata[21] = 3
+HOST: Blockdata[22] = 3
+HOST: Blockdata[23] = 3
+HOST: Blockdata[24] = 3
+HOST: Blockdata[25] = 3
+HOST: Blockdata[26] = 3
+HOST: Blockdata[27] = 3
+HOST: Blockdata[28] = 3
+HOST: Blockdata[29] = 3
+HOST: Blockdata[30] = 3
+HOST: Blockdata[31] = 3
+HOST: Blockdata[32] = 3
+HOST: Blockdata[33] = 3
+HOST: Blockdata[34] = 3
+HOST: Blockdata[35] = 3
+HOST: Blockdata[36] = 3
+HOST: Blockdata[37] = 3
+HOST: Blockdata[38] = 3
+HOST: Blockdata[39] = 3
+HOST: Blockdata[40] = 3
+HOST: Blockdata[41] = 3
+HOST: Blockdata[42] = 3
+HOST: Blockdata[43] = 3
+HOST: Blockdata[44] = 3
+HOST: Blockdata[45] = 3
+HOST: Blockdata[46] = 3
+HOST: Blockdata[47] = 3
+HOST: Blockdata[48] = 3
+HOST: Blockdata[49] = 3
+HOST: Blockdata[50] = 3
+HOST: Blockdata[51] = 3
+HOST: Blockdata[52] = 3
+HOST: Blockdata[53] = 3
+HOST: Blockdata[54] = 3
+HOST: Blockdata[55] = 3
+HOST: Blockdata[56] = 3
+HOST: Blockdata[57] = 3
+HOST: Blockdata[58] = 3
+HOST: Blockdata[59] = 3
+HOST: Blockdata[60] = 3
+HOST: Blockdata[61] = 3
+HOST: Blockdata[62] = 3
+HOST: Blockdata[63] = 3
+HOST: Blockdata[64] = 3
+HOST: Blockdata[65] = 3
+HOST: Blockdata[66] = 3
+HOST: Blockdata[67] = 3
+HOST: Blockdata[68] = 3
+HOST: Blockdata[69] = 3
+HOST: Blockdata[70] = 3
+HOST: Blockdata[71] = 3
+HOST: Blockdata[72] = 3
+HOST: Blockdata[73] = 3
+HOST: Blockdata[74] = 3
+HOST: Blockdata[75] = 3
+HOST: Blockdata[76] = 3
+HOST: Blockdata[77] = 3
+HOST: Blockdata[78] = 3
+HOST: Blockdata[79] = 3
+HOST: Blockdata[80] = 3
+HOST: Blockdata[81] = 3
+HOST: Blockdata[82] = 3
+HOST: Blockdata[83] = 3
+HOST: Blockdata[84] = 3
+HOST: Blockdata[85] = 3
+HOST: Blockdata[86] = 3
+HOST: Blockdata[87] = 3
+HOST: Blockdata[88] = 3
+HOST: Blockdata[89] = 3
+HOST: Blockdata[90] = 3
+HOST: Blockdata[91] = 3
+HOST: Blockdata[92] = 3
+HOST: Blockdata[93] = 3
+HOST: Blockdata[94] = 3
+HOST: Blockdata[95] = 3
+HOST: Blockdata[96] = 3
+HOST: Blockdata[97] = 3
+HOST: Blockdata[98] = 3
+HOST: Blockdata[99] = 3
+HOST: Blockdata[100] = 3
+HOST: Blockdata[101] = 3
+HOST: Blockdata[102] = 3
+HOST: Blockdata[103] = 3
+HOST: Blockdata[104] = 3
+HOST: Blockdata[105] = 3
+HOST: Blockdata[106] = 3
+HOST: Blockdata[107] = 3
+HOST: Blockdata[108] = 3
+HOST: Blockdata[109] = 3
+HOST: Blockdata[110] = 3
+HOST: Blockdata[111] = 3
+HOST: Blockdata[112] = 3
+HOST: Blockdata[113] = 3
+HOST: Blockdata[114] = 3
+HOST: Blockdata[115] = 3
+HOST: Blockdata[116] = 3
+HOST: Blockdata[117] = 3
+HOST: Blockdata[118] = 3
+HOST: Blockdata[119] = 3
+HOST: Blockdata[120] = 3
+HOST: Blockdata[121] = 3
+HOST: Blockdata[122] = 3
+HOST: Blockdata[123] = 3
+HOST: Blockdata[124] = 3
+HOST: Blockdata[125] = 3
+HOST: Blockdata[126] = 3
+HOST: Blockdata[127] = 3
+HOST:interrupt 1
+HOST:Normal Interrupt status is 2
+SD:Command=15 name=GO_INACTIVE
+HOST:interrupt 1
+HOST:Normal Interrupt status is 1
+HOST:Command Complete

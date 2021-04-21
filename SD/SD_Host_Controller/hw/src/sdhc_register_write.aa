@@ -1,0 +1,257 @@
+//Read-only register (RO): Register bits are read-only and cannot be altered by software or any reset
+//operation. Writes to these bits are ignored.
+//Read-only status (ROC): These bits are initialized to zero at reset. Writes to these bits are ignored.
+//Read-Write register (RW): Register bits are read-write and may be either set or cleared by software
+//to the desired state.
+//Read-only status, Write-1-to-clear status(RW1C): Register bits indicate status when read, a set bit
+//indicating a status event may be cleared by writing a 1. Writing a 0 to RW1C bits has no
+//effect.
+//Read-Write, automatic clear register (RWAC) :The Host Driver requests a Host Controller operation by
+//setting the bit. The Host Controllers shall clear the bit automatically when the operation of
+//complete. Writing a 0 to RWAC bits has no effect.
+//Hardware Initialized(HWInit): Register bits are initialized by firmware or hardware mechanisms such
+//as pin strapping or serial EEPROM. Bits are read-only after initialization, and writes to these
+//bits are ignored.
+//Reserved. These bits are initialized to zero.
+// Writing into the registers
+// Rsvd : Write zeros
+// ROC  : $null (should be initialized to zero on reset)
+// RO   : $null (reset does not affect)
+// RWAC : Like RW
+// RW1C : module RW1C
+// RW   : Default
+
+$module [sdhc_register_write] $in(address:$uint<8> data:$uint<8>) $out() $is
+{
+
+	$branchblock[write_register]
+	{
+		//$rreport( Show following address data)
+	$switch address
+	$when {BlockSize + 1} $then sdhcRegisters[address]:= (data & _h7f)
+
+	$when Transfer $then sdhcRegisters[address]:= (data & _h3f)
+	$when {Transfer + 1} $then sdhcRegisters[address]:= ZERO_8
+
+	$when Command $then sdhcRegisters[address]:= (data & _hfb)
+	$when {Command + 1} $then sdhcRegisters[address]:= (data & _h3f)
+	
+	$when Response0 $then $null
+	$when {Response0 + 1} $then $null
+	$when {Response0 + 2} $then $null
+	$when {Response0 + 3} $then $null
+	$when Response2 $then $null
+	$when {Response2 + 1} $then $null
+	$when {Response2 + 2} $then $null
+	$when {Response2 + 3} $then $null
+	$when Response4 $then $null
+	$when {Response4 + 1} $then $null
+	$when {Response4 + 2} $then $null
+	$when {Response4 + 3} $then $null
+	$when Response6 $then $null
+	$when {Response6 + 1} $then $null
+	$when {Response6 + 2} $then $null
+	$when {Response6 + 3}  $then $null
+
+	$when PresentState $then $null
+	$when {PresentState + 1} $then $null
+	$when {PresentState + 2} $then $null
+	$when {PresentState + 3} $then $null
+	
+	$when PowerControl $then sdhcRegisters[address] := (data & _hf)
+	
+	$when TimeoutControl $then sdhcRegisters[address] := (data & _hf)
+	
+	$when SoftwareReset $then sdhcRegisters[address] := (data & _h7)
+
+	$when NormalInterruptStatus $then $call RW1C (data address) () 
+	$when {NormalInterruptStatus + 1} $then $null
+	
+	$when ErrorInterruptStatus $then $call RW1C (data address) ()
+	$when {ErrorInterruptStatus + 1} $then $call RW1C (data address) ()
+	
+	$when {NormalInterruptStatusEnable + 1} $then sdhcRegisters[address] := (data & _h1f)
+	
+	$when {ErrorInterruptStatusEnable + 1} $then sdhcRegisters[address] := (data & _hf7)
+	
+	$when {NormalInterruptSignalEnable + 1} $then sdhcRegisters[address] := (data & _h1f)
+
+	$when {ErrorInterruptSignalEnable + 1} $then sdhcRegisters[address] := (data & _hf7)
+	
+	$when AutoCmdError $then $null
+	$when {AutoCmdError + 1} $then sdhcRegisters[address] := ZERO_8
+
+	$when {HostControl2 + 1} $then sdhcRegisters[address] := (data & _hC0)
+	
+	$when Capabilities $then $null
+	$when {Capabilities + 1} $then $null
+	$when {Capabilities + 2} $then $null
+	$when {Capabilities + 3} $then $null
+	$when {Capabilities + 4} $then $null
+	$when {Capabilities + 5} $then $null
+	$when {Capabilities + 6} $then $null
+	$when {Capabilities + 7} $then sdhcRegisters[address] := ZERO_8
+
+	$when MaxCurrentCapabilities $then $null
+	$when {MaxCurrentCapabilities + 1} $then $null
+	$when {MaxCurrentCapabilities + 2} $then $null
+	$when {MaxCurrentCapabilities + 3} $then sdhcRegisters[address] := ZERO_8
+	$when {MaxCurrentCapabilities + 4} $then sdhcRegisters[address] := ZERO_8
+	$when {MaxCurrentCapabilities + 5} $then sdhcRegisters[address] := ZERO_8
+	$when {MaxCurrentCapabilities + 6} $then sdhcRegisters[address] := ZERO_8
+	$when {MaxCurrentCapabilities + 7} $then sdhcRegisters[address] := ZERO_8
+
+	$when PresetValue $then $null
+	$when {PresetValue + 1} $then $null
+	$when {PresetValue + 2} $then $null
+	$when {PresetValue + 3} $then $null
+	$when {PresetValue + 4} $then $null
+	$when {PresetValue + 5} $then $null
+	$when {PresetValue + 6} $then $null
+	$when {PresetValue + 7} $then $null
+	$when {PresetValue + 8} $then $null
+	$when {PresetValue + 9} $then $null
+	$when {PresetValue + 10} $then $null
+	$when {PresetValue + 11} $then $null
+	$when {PresetValue + 12} $then $null
+	$when {PresetValue + 13} $then $null
+	$when {PresetValue + 14} $then $null
+	$when {PresetValue + 15} $then $null
+
+	$when HostControllerVersion $then $null
+	$when {HostControllerVersion + 1} $then $null
+
+
+	//For RW bits
+	$default sdhcRegisters[address]:= data
+	$endswitch	
+	}
+}
+//Module for storing RW1C type bits
+$module [RW1C] $in(data:$uint<8> address:$uint<8>) $out() $is
+{
+	current_data:= sdhcRegisters[address]
+	$branchblock[rw1c]
+	{
+	$split (data 1 1 1 1 1 1 1 1) (d7 d6 d5 d4 d3 d2 d1 d0)
+	$split (current_data 1 1 1 1 1 1 1 1) (current_d7 current_d6 current_d5 current_d4 current_d3 current_d2 current_d1 current_d0)
+
+	b0:= ($mux d0 ZERO_1 current_d0)
+	b1:= ($mux d1 ZERO_1 current_d1)
+	b2:= ($mux d2 ZERO_1 current_d2)
+	b3:= ($mux d3 ZERO_1 current_d3)
+	b4:= ($mux d4 ZERO_1 current_d4)
+	b5:= ($mux d5 ZERO_1 current_d5)
+	b6:= ($mux d6 ZERO_1 current_d6)
+	b7:= ($mux d7 ZERO_1 current_d7)
+
+    sdhcRegisters[address] := ($concat b7 b6 b5 b4 b3 b2 b1 b0)
+	$if(address == NormalInterruptStatus)$then
+		
+		normalInterruptFlag1:= ((~data) & normalInterruptFlag1)
+	$endif
+	$if(address == {NormalInterruptStatus + 1})$then
+		normalInterruptFlag2:= ((~data) & normalInterruptFlag2)
+	$endif
+	$if(address == ErrorInterruptStatus)$then
+		errorInterruptFlag1:= ((~data) & errorInterruptFlag1)
+	$endif
+	$if(address == {ErrorInterruptStatus + 1})$then
+		errorInterruptFlag2:= ((~data) & errorInterruptFlag2)
+	$endif
+	}
+}
+
+//Module for reseting registers to initial values
+$module [resetRegisters] $in(resetCondition:$uint<2>) $out() $is
+{
+	//HWInit Values
+  	sdhcRegisters[Capabilities]:= _h8A
+	sdhcRegisters[{Capabilities + 1}]:= _h64
+	sdhcRegisters[{Capabilities + 2}]:= _h20
+	sdhcRegisters[{Capabilities + 3}]:= _h05
+	sdhcRegisters[{Capabilities + 4}]:= _h31
+	sdhcRegisters[{Capabilities + 5}]:= _h00
+	sdhcRegisters[{Capabilities + 6}]:= _h00
+	sdhcRegisters[{Capabilities + 7}]:= _h00
+
+	sdhcRegisters[MaxCurrentCapabilities]:= _h64 //For 400mA current capabilities in 3.3V
+	sdhcRegisters[{MaxCurrentCapabilities + 1}]:= _h96 //For 600mA for 3.0V
+	sdhcRegisters[{MaxCurrentCapabilities + 2}]:= _hC8 //For 800mA for 1.8V
+	sdhcRegisters[{MaxCurrentCapabilities + 3}]:= _h00
+	sdhcRegisters[{MaxCurrentCapabilities + 4}]:= _h00
+	sdhcRegisters[{MaxCurrentCapabilities + 5}]:= _h00
+	sdhcRegisters[{MaxCurrentCapabilities + 6}]:= _h00
+	sdhcRegisters[{MaxCurrentCapabilities + 7}]:= _h00
+
+	sdhcRegisters[PresetValue]:= _h7D
+	sdhcRegisters[{PresetValue + 1}]:= _h00
+	sdhcRegisters[{PresetValue + 2}]:= _h02
+	sdhcRegisters[{PresetValue + 3}]:= _h00
+	sdhcRegisters[{PresetValue + 4}]:= _h01  
+	sdhcRegisters[{PresetValue + 5}]:= _h00
+	sdhcRegisters[{PresetValue + 6}]:= _h04
+	sdhcRegisters[{PresetValue + 7}]:= _h00
+	sdhcRegisters[{PresetValue + 8}]:= _h02
+	sdhcRegisters[{PresetValue + 9}]:= _h40 
+	sdhcRegisters[{PresetValue + 10}]:=_h01 
+	sdhcRegisters[{PresetValue + 11}]:=_h80
+	sdhcRegisters[{PresetValue + 12}]:=_h00
+	sdhcRegisters[{PresetValue + 13}]:=_h00
+	sdhcRegisters[{PresetValue + 14}]:=_h00
+	sdhcRegisters[{PresetValue + 15}]:=_h00
+
+	sdhcRegisters[HostControllerVersion]:= _h02  //Host Controller Version 3.00
+	sdhcRegisters[{HostControllerVersion + 1}]:= _h00
+
+	$branchblock[resetRegister]
+	{
+		$merge $entry loopback
+			$phi I:= ($bitcast ($uint<9>) 0) $on $entry next_I $on loopback
+		$endmerge
+		current_register_value:= sdhcRegisters[I]
+		current_softwarereset_register_value:= sdhcRegisters[SoftwareReset]
+		$volatile condition:= ((I>=Capabilities) & (I<{Capabilities + 8})) 
+		$volatile condition2:=((I>=MaxCurrentCapabilities) & (I<{MaxCurrentCapabilities + 8}))  
+		$volatile condition3:=((I>=PresetValue) & (I<{PresetValue + 16})) 
+		$volatile condition4:=((I>=HostControllerVersion) & (I<{HostControllerVersion + 2}))
+		$if($reduce | condition condition2 condition3 condition4) $then
+			$null
+		$else $if(resetCondition == ZERO_2) $then
+			sdhcRegisters[I]:= ZERO_8
+		$else $if((resetCondition == ONE_2) & ((I == PresentState)| (I == NormalInterruptStatus))) $then
+			sdhcRegisters[I]:= (current_register_value & _hfe)
+		$else $if(resetCondition == ($bitcast ($uint<2>)2))$then
+			//Clear DAT line 
+				$if((I>=BufferDataPort) & (I<{BufferDataPort + 4}))$then
+					sdhcRegisters[I] := ZERO_8
+				$endif
+				$if(I==PresentState)$then
+					sdhcRegisters[I]:= (current_register_value & _h09)
+				$endif
+				$if(I=={PresentState + 1}) $then
+					sdhcRegisters[I]:= ZERO_8
+				$endif
+				$if(I==BlockGapControl) $then
+					sdhcRegisters[I]:= (current_register_value & _h0C)
+				$endif
+				$if(I==NormalInterruptStatus) $then
+					sdhcRegisters[I]:= (current_register_value & _hC1)
+				$endif
+		$endif
+		$endif
+		$endif
+		$endif
+		$volatile next_I:= (I + 1)
+		$if(next_I < 256) $then
+			$place[loopback]
+		$endif
+		$if(resetCondition == ONE_2)$then
+			sdhcRegisters[SoftwareReset]:= (current_softwarereset_register_value & _hfd)
+		$endif
+		$if(resetCondition == ($bitcast ($uint<2>)2)) $then
+			sdhcRegisters[SoftwareReset]:= (current_softwarereset_register_value & _hfb)
+		$endif
+	}
+}
+

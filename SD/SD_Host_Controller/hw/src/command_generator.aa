@@ -1,0 +1,215 @@
+// Generating 48 bit command frame
+// Also storing the response from the SD card into the Response registers
+// Returns Interrupt statuses
+$module [command_generator] $in() $out(normalInterruptStatusVar1:$uint<8> normalInterruptStatusVar2:$uint<8> errorInterruptStatusVar1:$uint<8> errorInterruptStatusVar2:$uint<8> dataErrorInterruptStatusVar1:$uint<8> dataTransferComplete:$uint<8>) $is
+{
+	$branchblock[command]
+	{
+	argumentVal3 := sdhcRegisters[{Argument+3}] 
+	argumentVal2 := sdhcRegisters[{Argument+2}] 
+	argumentVal1 := sdhcRegisters[{Argument+1}] 
+	argumentVal0 := sdhcRegisters[Argument]  
+	command40bits := ($concat ZERO_1 ONE_1 ($slice sdhcRegisters[{Command + 1}] 5 0) argumentVal3 argumentVal2 argumentVal1 argumentVal0)
+	current_crc:= ZERO_8
+	$call generate_crc_7 (command40bits) (crc7)
+
+	//$rreport(DEbug here crc7) 
+	//crc7 := ($bitcast ($uint<7>) 0)
+	commandbits := ($concat command40bits crc7 ONE_1)
+	//Sending the commands to the Command transmission pipe
+	$branchblock[send_command]
+	{
+		$merge $entry commandloopback
+			$phi J:= ZERO_8 $on $entry next_J $on commandloopback
+			$phi old_commandbits:= commandbits $on $entry new_commandbits $on commandloopback
+			$endmerge
+			$volatile next_J:= (J + 1)
+			bit:= ($slice old_commandbits 47 47)
+			commandTx:= bit
+			new_commandbits:= (old_commandbits << 1) 
+		$if(next_J < 48) $then
+			$place[commandloopback]
+		$endif
+	}
+	
+	//Recieving response from the SD card
+	response_type := ($slice sdhcRegisters[Command] 1 0)
+	//-------------Data present or not checked---------------------- 
+	//dataPresentSelect:= ($bitreduce | (sdhcRegisters[Command] & _h20))
+	dataPresentSelect:= (sdhcRegisters[Command] [] 5)
+	$if(dataPresentSelect == 1)$then
+		txOrRX:= ($bitreduce | (sdhcRegisters[Transfer] & _h10))// 1 - Read , 0 - Write
+		presentState1Var:= sdhcRegisters[{PresentState + 1}]
+		presentState0Var:= sdhcRegisters[PresentState]
+		//------------Read or Write Transfer Active-----------
+		$if(response_type != 3)$then
+			sdhcRegisters[{PresentState + 1}]:= ($mux txOrRX ( presentState1Var| _h02) (presentState1Var | _h01))
+		$endif
+		//-------------DAT Line Active and Command Inhibit (DAT)------------------
+		sdhcRegisters[PresentState]:= (presentState0Var | _h06)	
+	$endif
+	$rreport(rsp resp response_type dataPresentSelect)
+	//R1,R6,R7 Response Length 48
+	$if ((response_type == 2) | (response_type == 3)) $then //response_type 3 R1b need to check for busy
+		$branchblock[receive_response]
+		{
+		$merge $entry responseloopback
+			$phi J:= ($bitcast ($uint<6>) 0) $on $entry next_J $on responseloopback
+			$phi old_responsebits:= ($bitcast ($uint<48>) 0) $on $entry new_responsebits $on responseloopback
+		$endmerge
+			$volatile next_J:= (J + 1)
+			responsebit:= responseRx
+			responsebits:= ($concat ($bitcast ($uint<47>) 0) responsebit)
+			new_responsebits:= ((old_responsebits<<1) | responsebits)
+			//$rreport(dumm dum responsebit responsebits new_responsebits old_responsebits)
+		$if(next_J < 48) $then
+			$place[responseloopback]
+		$endif
+		}(new_responsebits=>response)
+		$rreport(gen_comm f response)
+
+		$if(response_type == 3)$then
+			$merge $entry waitloop $endmerge
+				wait:= DAT0Rx
+			$if(wait == ZERO_1)$then
+				$place[waitloop]
+			$endif
+		$endif
+		$if ((sdhcRegisters[Command] & _h8) == 8) $then  //CRC Check Enable
+			$call generate_crc_7 (($slice response 47 8)) (R1_6_7CRC)
+			//This will assert the CommandCRCError Interrupt Status.
+			//R1_6_7CRC := ($bitcast ($uint<7>) 0)
+			CommandCRCError := ($mux (($slice response 7 1) == R1_6_7CRC) _b00000000 _b00000010) 
+		$endif
+		checkit:= ($slice response 7 1)
+		$rreport(r1crc check CommandCRCError R1_6_7CRC checkit)
+		$if ((sdhcRegisters[Command] & _h10) == 16) $then //Command Index Enable
+			commandIndexCheck := (($slice sdhcRegisters[{Command + 1}] 5 0) == ($slice response 45 40))
+			//This will assert the CommandIndexError Interrupt Status.
+			CommandIndexError:= ($mux commandIndexCheck _b00000000 _b00001000)
+		$endif
+		
+		sdhcRegisters[{Response0+3}] := ($slice response 39 32)
+		sdhcRegisters[{Response0+2}] := ($slice response 31 24)
+		sdhcRegisters[{Response0+1}] := ($slice response 23 16)
+		sdhcRegisters[{Response0+0}] := ($slice response 15 8)
+
+		//Present State Change
+		presentState2 := ((sdhcRegisters[PresentState]>>1) << 1)
+		//Normal Interrupt Variable
+		normalInterrupt2:= sdhcRegisters[NormalInterruptStatus]
+		sdhcRegisters[PresentState]:= presentState2 //Clearing commandInhibit(CMD)
+
+		//for response_type 3 we have to clear commandInhibit_DAT
+		//Command End Bit Error check
+		commandEndBitError := ($mux (response [] 0) ZERO_8 ($bitcast ($uint<8>) 4))
+		normalInterruptStatusVar_2:= (normalInterrupt2 | _h01)
+		errorInterruptStatusVar_2 := ($reduce | CommandIndexError CommandCRCError commandEndBitError)
+		$place[normalInterruptResponse2]
+	
+
+	$else $if(response_type == 1) $then //R2 Response Length 136
+		//response1 := responseRx
+		//response2 := responseRx
+		//response3 := responseRx
+		//$rreport(Here h response_type)
+		$branchblock[receive_bigresponse]
+		{
+		$merge $entry bigresponseloopback
+			$phi J:= ($bitcast ($uint<8>) 0) $on $entry next_J $on bigresponseloopback
+			$phi old_bigresponsebits:= ($bitcast ($uint<136>) 0) $on $entry new_bigresponsebits $on bigresponseloopback
+		$endmerge
+			//$rreport(receive_bigresponse r response_type)
+			$volatile next_J:= (J + 1)
+			bigresponsebit:= responseRx
+			bigresponsebits:= ($concat ($bitcast ($uint<135>) 0) bigresponsebit)
+			new_bigresponsebits:= ((old_bigresponsebits<<1) | bigresponsebits)
+			//$rreport(dumm dum bigresponsebit bigresponsebits new_bigresponsebits old_bigresponsebits)
+		$if(next_J < 136) $then
+			$place[bigresponseloopback]
+		$endif
+		}(new_bigresponsebits=>bigResponse)
+		$rreport(gen_comm f bigResponse)
+
+		$volatile CID := ($slice bigResponse 127 8)
+		$volatile CID_CRC := ($slice bigResponse 7 1)
+		$if ((sdhcRegisters[Command] & _h8) == 8) $then  //CRC Check Enable
+			$call generate_crc_7_120 (CID) (R2_CRC) //-----CRC FOR 120bits------
+			//This will assert the CommandCRCError Interrupt Status.
+			//R2_CRC := ZERO_8
+			CommandCRCError1 := ($mux (crc7 == R2_CRC) _b00000000 _b00000010)
+		$endif
+		//$rreport(err e CommandCRCError1 R2_CRC)
+		commandEndBitError1:= ($mux (bigResponse [] 0) ZERO_8 ($bitcast ($uint<8>) 4))
+		errorInterruptStatusVar_3 := (CommandCRCError1 | commandEndBitError1)
+
+		$call bigResponseWrite (CID) ()
+
+		$volatile presentState3:= ((sdhcRegisters[PresentState]>>1) << 1)
+		$volatile normalInterrupt3:= sdhcRegisters[NormalInterruptStatus]
+		sdhcRegisters[PresentState]:= presentState3 //Clearing commandInhibit(CMD)
+		normalInterruptStatusVar_3:= (normalInterrupt3| _h01)//command Interrupt
+		$place[normalInterruptResponse3] 
+		
+		$else $if(response_type == 0) $then //No response type
+				$volatile presentState1:= ((sdhcRegisters[PresentState]>>1) << 1)
+				$volatile normalInterrupt1:= sdhcRegisters[NormalInterruptStatus]
+				sdhcRegisters[PresentState]:= presentState1 //Clearing commandInhibit(CMD)
+				normalInterruptStatusVar_1:= (normalInterrupt1| _h01)
+				errorInterruptStatusVar_1 := ZERO_8
+				$place[normalInterruptResponse1] 
+			$endif
+		$endif
+	$endif	
+	
+	$merge normalInterruptResponse1 normalInterruptResponse2 normalInterruptResponse3
+		$phi normalInterruptStatusVar1 := normalInterruptStatusVar_1 $on normalInterruptResponse1
+										normalInterruptStatusVar_2 $on normalInterruptResponse2
+										normalInterruptStatusVar_3 $on normalInterruptResponse3 	
+		$phi errorInterruptStatusVar1 := errorInterruptStatusVar_1 $on normalInterruptResponse1
+										errorInterruptStatusVar_2 $on normalInterruptResponse2
+										errorInterruptStatusVar_3 $on normalInterruptResponse3 	
+	//sdhcRegisters[ErrorInterruptStatus] := (CommandIndexError | CommandCRCError)
+	$endmerge
+	//$rreport(You Here errorInterruptStatusVar1)
+	$if(dataPresentSelect == 1)$then
+	//Receive Data from the SDCard
+	//$rreport(You Here errorInterruptStatusVar1 txOrRX)
+		$if((txOrRX == 1) & (response_type !=3))$then
+			singleMultipleReadBlock:= ($bitreduce | (sdhcRegisters[Transfer] & _h20))//1:multipleblock 0: single block
+			$call dataRx (singleMultipleReadBlock) (dataErrorInterruptStatusVar1)
+			dataRxEnrty1:= ONE_1
+			dataRxEnrty2:= ZERO_1
+			transferCompleteData:= ($mux singleMultipleReadBlock ($bitcast ($uint<8>)2) ZERO_8)
+			$if(singleMultipleReadBlock ==1)$then
+				readBlockCount:= (sdhcRegisters[{BlockCount +1}] && sdhcRegisters[BlockCount])
+				newReadBlockCount:= (readBlockCount -1)
+				sdhcRegisters[{BlockCount + 1}]:= ($slice newReadBlockCount 15 8)
+				sdhcRegisters[BlockCount]:= ($slice newReadBlockCount 7 0)
+			$endif
+		$endif
+		dataTransferComplete:= ($mux (response_type == 3) ($bitcast ($uint<8>)2) transferCompleteData)
+	$endif
+	normalInterruptStatusVar2:= ZERO_8
+	errorInterruptStatusVar2:= ZERO_8
+	}
+}
+
+$module [bigResponseWrite] $in(CID:$uint<120>) $out() $is
+{
+	$branchblock[big_resp]
+	{
+		$merge $entry loopback
+			$phi k := ($bitcast ($uint<8>) 0) $on $entry next_k $on loopback
+			$phi temp := CID $on $entry next_temp $on loopback 
+		$endmerge
+			address:= (16 + k)//Response0 + k
+			sdhcRegisters[address]:= ($slice temp 7 0)
+			next_temp:= (temp >> 8)
+			$volatile next_k:= ( k + 1)
+			//$volatile next_temp:= (temp + 8)
+		$if(next_k < 15) $then
+			$place[loopback]
+		$endif
+	}
+}

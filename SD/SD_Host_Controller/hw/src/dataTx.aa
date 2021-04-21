@@ -1,0 +1,277 @@
+$module [dataTx] $in(lastBlock:$uint<1> blockCountEnable:$uint<1> blockCount:$uint<16>) $out(blockCountNext:$uint<16> transferComplete:$uint<8>) $is
+{
+	$branchblock[data]
+	{
+		
+		//Host Control1 Register: Data Transfer Width (1: 4-bit Mode) (0: 1-bit Mode)
+		$if(sdhcRegisters[HostControl] [] 1)$then
+			$branchblock[dat_store_4]
+			{
+				$merge $entry loopback1_4
+					$phi i:= ($bitcast ($uint<10>) 0) $on $entry next_i $on loopback1_4
+					$phi dat0:= ($bitcast ($uint<1024>) 0) $on $entry next_data0 $on loopback1_4
+					$phi dat1:= ($bitcast ($uint<1024>) 0) $on $entry next_data1 $on loopback1_4
+					$phi dat2:= ($bitcast ($uint<1024>) 0) $on $entry next_data2 $on loopback1_4
+					$phi dat3:= ($bitcast ($uint<1024>) 0) $on $entry next_data3 $on loopback1_4
+				$endmerge
+				//buffer := (($bitcast ($uint<4088>)0) && dataBufferTx )
+				tempBuffer:= dataBufferTx
+				next_data0:= ((dat0<<2) | ($concat ($bitcast ($uint<1022>)0) (tempBuffer [] 7) (tempBuffer[] 3) ))
+				next_data1:= ((dat1<<2) | ($concat ($bitcast ($uint<1022>)0) (tempBuffer [] 6) (tempBuffer[] 2) ))
+				next_data2:= ((dat2<<2) | ($concat ($bitcast ($uint<1022>)0) (tempBuffer [] 5) (tempBuffer[] 1) ))
+				next_data3:= ((dat3<<2) | ($concat ($bitcast ($uint<1022>)0) (tempBuffer [] 4) (tempBuffer[] 0) ))
+				$rreport(DATAIN next i tempBuffer next_data0 next_data1 next_data2 next_data3)
+				next_i := (i + 1)
+				$if(next_i < 512)$then
+					$place [loopback1_4]
+				$endif
+			}(next_data0 => dat0 next_data1 => dat1 next_data2 => dat2 next_data3 => dat3)
+			//All data Read from the buffer so pointer reset to zero
+			txBufferPointer := ($bitcast ($uint<10>) 0)
+			//---------Finding CRC 16 for data line 0-----------
+				$merge $entry loopback_dat0
+					$phi j_0:= ($bitcast ($uint<11>) 0) $on $entry next_j_0 $on loopback_dat0
+					$phi CRC_16_DAT0:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16_DAT0 $on loopback_dat0
+					$phi tempDataD0 := dat0 $on $entry nextTempDataD0 $on loopback_dat0
+				$endmerge
+				invd0:= ((tempDataD0 [] 1023) ^ (CRC_16_DAT0 [] 15) )
+				nextCRC16_DAT0:= ($concat ($slice CRC_16_DAT0 14 12) ((CRC_16_DAT0 [] 11 )^ invd0) ($slice CRC_16_DAT0 10 5) ((CRC_16_DAT0 [] 4) ^ invd0) ($slice CRC_16_DAT0 3 0) invd0)
+				nextTempDataD0:= (tempDataD0 << 1)
+				$volatile next_j_0 := (j_0 + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				$if(next_j_0 < 1024)$then
+					$place[loopback_dat0]
+				$endif
+			//Finding CRC 16 for data line 1
+				$merge $entry loopback_dat1
+					$phi j_1:= ($bitcast ($uint<11>) 0) $on $entry next_j_1 $on loopback_dat1
+					$phi CRC_16_DAT1:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16_DAT1 $on loopback_dat1
+					$phi tempDataD1 := dat1 $on $entry nextTempDataD1 $on loopback_dat1
+				$endmerge
+				invd1:= ((tempDataD1 [] 1023) ^ (CRC_16_DAT1 [] 15) )
+				nextCRC16_DAT1:= ($concat ($slice CRC_16_DAT1 14 12) ((CRC_16_DAT1 [] 11 )^ invd1) ($slice CRC_16_DAT1 10 5) ((CRC_16_DAT1 [] 4) ^ invd1) ($slice CRC_16_DAT1 3 0) invd1)
+				nextTempDataD1:= (tempDataD1 << 1)
+				$volatile next_j_1 := (j_1 + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				$if(next_j_1 < 1024)$then
+					$place[loopback_dat1]
+				$endif
+			//Finding CRC 16 for data line 2
+				$merge $entry loopback_dat2
+					$phi j_2:= ($bitcast ($uint<11>) 0) $on $entry next_j_2 $on loopback_dat2
+					$phi CRC_16_DAT2:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16_DAT2 $on loopback_dat2
+					$phi tempDataD2 := dat2 $on $entry nextTempDataD2 $on loopback_dat2
+				$endmerge
+				invd2:= ((tempDataD2 [] 1023) ^ (CRC_16_DAT2 [] 15) )
+				nextCRC16_DAT2:= ($concat ($slice CRC_16_DAT2 14 12) ((CRC_16_DAT2 [] 11 )^ invd2) ($slice CRC_16_DAT2 10 5) ((CRC_16_DAT2 [] 4) ^ invd2) ($slice CRC_16_DAT2 3 0) invd2)
+				nextTempDataD2:= (tempDataD2 << 1)
+				$volatile next_j_2 := (j_2 + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				$if(next_j_2 < 1024)$then
+					$place[loopback_dat2]
+				$endif
+			//Finding CRC 16 for data line 3
+				$merge $entry loopback_dat3
+					$phi j_3:= ($bitcast ($uint<11>) 0) $on $entry next_j_3 $on loopback_dat3
+					$phi CRC_16_DAT3:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16_DAT3 $on loopback_dat3
+					$phi tempDataD3 := dat3 $on $entry nextTempDataD3 $on loopback_dat3
+				$endmerge
+				invd3:= ((tempDataD3 [] 1023) ^ (CRC_16_DAT3 [] 15) )
+				nextCRC16_DAT3:= ($concat ($slice CRC_16_DAT3 14 12) ((CRC_16_DAT3 [] 11 )^ invd3) ($slice CRC_16_DAT3 10 5) ((CRC_16_DAT3 [] 4) ^ invd3) ($slice CRC_16_DAT3 3 0) invd3)
+				nextTempDataD3:= (tempDataD3 << 1)
+				$volatile next_j_3 := (j_3 + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				$if(next_j_3 < 1024)$then
+					$place[loopback_dat3]
+				$endif
+			//$rreport(OUTDATA data lastBlock)
+			//-----------------------------------------------------------------------
+			//Send dat through DAT0Tx
+			DAT0Tx := ZERO_1
+			$merge $entry dataloop4_0
+				$phi k_0:= ($bitcast ($uint<11>) 0) $on $entry next_k_0 $on dataloop4_0
+				$phi dat0bit4_0:= dat0 $on $entry nextbit4_0 $on dataloop4_0
+			$endmerge
+			DAT0Tx := (dat0bit4_0 [] 1023)
+			nextbit4_0 := (dat0bit4_0 << 1)
+			next_k_0 := (k_0 + 1)
+			$if(next_k_0 <1024)$then
+				$place[dataloop4_0]
+			$endif
+			$merge $entry crcloop4_0
+				$phi l_0:= ($bitcast ($uint<5>) 0) $on $entry next_l_0 $on crcloop4_0
+				$phi dat0crc4:= nextCRC16_DAT0 $on $entry nextbitcrc4_0 $on crcloop4_0
+			$endmerge
+			DAT0Tx := (dat0crc4 [] 15)
+			nextbitcrc4_0 := (dat0crc4 << 1)
+			next_l_0 := (l_0 + 1)
+			$if(next_l_0 <16)$then
+				$place[crcloop4_0]
+			$endif
+			DAT0Tx := ONE_1
+			$rreport(OUTDATA0 data lastBlock)
+			//End of transmission on DAT0 line
+			//Send dat through DAT1Tx
+			DAT1Tx := ZERO_1
+			$merge $entry dataloop4_1
+				$phi k_1:= ($bitcast ($uint<11>) 0) $on $entry next_k_1 $on dataloop4_1
+				$phi dat0bit4_1:= dat1 $on $entry nextbit4_1 $on dataloop4_1
+			$endmerge
+			DAT1Tx := (dat0bit4_1 [] 1023)
+			nextbit4_1 := (dat0bit4_1 << 1)
+			next_k_1 := (k_1 + 1)
+			$if(next_k_1 <1024)$then
+				$place[dataloop4_1]
+			$endif
+			$merge $entry crcloop4_1
+				$phi l_1:= ($bitcast ($uint<5>) 0) $on $entry next_l_1 $on crcloop4_1
+				$phi dat1crc4:= nextCRC16_DAT1 $on $entry nextbitcrc4_1 $on crcloop4_1
+			$endmerge
+			DAT1Tx := (dat1crc4 [] 15)
+			nextbitcrc4_1 := (dat1crc4 << 1)
+			next_l_1 := (l_1 + 1)
+			$if(next_l_1 <16)$then
+				$place[crcloop4_1]
+			$endif
+			DAT1Tx := ONE_1
+			//$rreport(OUTDATA1 data lastBlock)
+			//End of transmission on DAT1 line
+			//Send dat through DAT2Tx
+			DAT2Tx := ZERO_1
+			$merge $entry dataloop4_2
+				$phi k_2:= ($bitcast ($uint<11>) 0) $on $entry next_k_2 $on dataloop4_2
+				$phi dat0bit4_2:= dat2 $on $entry nextbit4_2 $on dataloop4_2
+			$endmerge
+			DAT2Tx := (dat0bit4_2 [] 1023)
+			nextbit4_2 := (dat0bit4_2 << 1)
+			next_k_2 := (k_2 + 1)
+			$if(next_k_2 <1024)$then
+				$place[dataloop4_2]
+			$endif
+			$merge $entry crcloop4_2
+				$phi l_2:= ($bitcast ($uint<5>) 0) $on $entry next_l_2 $on crcloop4_2
+				$phi dat2crc4:= nextCRC16_DAT2 $on $entry nextbitcrc4_2 $on crcloop4_2
+			$endmerge
+			DAT2Tx := (dat2crc4 [] 15)
+			nextbitcrc4_2 := (dat2crc4 << 1)
+			next_l_2 := (l_2 + 1)
+			$if(next_l_2 <16)$then
+				$place[crcloop4_2]
+			$endif
+			DAT2Tx := ONE_1
+			$rreport(OUTDATA2 data lastBlock)
+			//End of transmission on DAT2 line
+			//Send dat through DAT3Tx
+			DAT3Tx := ZERO_1
+			$merge $entry dataloop4_3
+				$phi k_3:= ($bitcast ($uint<11>) 0) $on $entry next_k_3 $on dataloop4_3
+				$phi dat0bit4_3:= dat3 $on $entry nextbit4_3 $on dataloop4_3
+			$endmerge
+			DAT3Tx := (dat0bit4_3 [] 1023)
+			nextbit4_3 := (dat0bit4_3 << 1)
+			next_k_3 := (k_3 + 1)
+			$if(next_k_3 <1024)$then
+				$place[dataloop4_3]
+			$endif
+			$merge $entry crcloop4_3
+				$phi l_3:= ($bitcast ($uint<5>) 0) $on $entry next_l_3 $on crcloop4_3
+				$phi dat3crc4:= nextCRC16_DAT3 $on $entry nextbitcrc4_3 $on crcloop4_3
+			$endmerge
+			DAT3Tx := (dat3crc4 [] 15)
+			nextbitcrc4_3 := (dat3crc4 << 1)
+			next_l_3 := (l_3 + 1)
+			$if(next_l_3 <16)$then
+				$place[crcloop4_3]
+			$endif
+			DAT3Tx := ONE_1
+			$rreport(OUTDATA3 data lastBlock)
+			//End of transmission on DAT3 line
+			$rreport(END transmission dat0 dat1 dat2 dat3)
+			//--------------------------------------------------------------------------
+			
+		$else
+			$branchblock[dat_store]
+			{
+				$merge $entry loopback1
+					$phi I:= ($bitcast ($uint<10>) 0) $on $entry next_I $on loopback1
+					$phi dat:= ($bitcast ($uint<4096>) 0) $on $entry next_data $on loopback1
+				$endmerge
+				//buffer := (($bitcast ($uint<4088>)0) && dataBufferTx )
+				next_data:= ((dat<<8) | (($bitcast ($uint<4088>)0) && dataBufferTx ))
+				//$rreport(DATA next buffer I)
+				next_I := (I + 1)
+				$if(next_I < 512)$then
+					$place [loopback1]
+				$endif
+			}(next_data => dat)
+			//All data Read from the buffer so pointer reset to zero
+			txBufferPointer := ($bitcast ($uint<10>) 0)
+			//Finding CRC 16 for data block
+				$merge $entry loopback
+					$phi J:= ($bitcast ($uint<13>) 0) $on $entry next_J $on loopback
+					$phi CRC_16:= ($bitcast ($uint<16>) 0) $on $entry nextCRC16 $on loopback
+					$phi tempData := dat $on $entry nextTempData $on loopback
+				$endmerge
+				//$call generate_crc_16 (CRC16,tempData) (nextCRC16)
+				inv:= ((tempData [] 4095) ^ (CRC_16 [] 15) )
+				nextCRC16:= ($concat ($slice CRC_16 14 12) ((CRC_16 [] 11 )^ inv) ($slice CRC_16 10 5) ((CRC_16 [] 4) ^ inv) ($slice CRC_16 3 0) inv)
+				nextTempData:= (tempData << 1)
+				$volatile next_J := (J + 1)
+				//$rreport(IN CR CRC_16 nextCRC16 inv )
+				$if(next_J < 4096)$then
+					$place[loopback]
+				$endif
+			$rreport(OUTDATA data dat nextCRC16 lastBlock)
+			//-----------------------------------------------------------------------
+			//Send dat through DAT0Tx
+			DAT0Tx := ZERO_1
+			$merge $entry dataloop
+				$phi K:= ($bitcast ($uint<13>) 0) $on $entry next_K $on dataloop
+				$phi dat0bit:= dat $on $entry nextbit $on dataloop
+			$endmerge
+			DAT0Tx := (dat0bit [] 4095)
+			nextbit := (dat0bit << 1)
+			next_K := (K + 1)
+			$if(next_K <4096)$then
+				$place[dataloop]
+			$endif
+			$merge $entry crcloop
+				$phi L:= ($bitcast ($uint<5>) 0) $on $entry next_L $on crcloop
+				$phi dat0crc:= nextCRC16 $on $entry nextbitcrc $on crcloop
+			$endmerge
+			DAT0Tx := (dat0crc [] 15)
+			nextbitcrc := (dat0crc << 1)
+			next_L := (L + 1)
+			$if(next_L <16)$then
+				$place[crcloop]
+			$endif
+			DAT0Tx := ONE_1
+			//End of transmission on DAT0 line
+			//--------------------------------------------------------------------------
+		$endif
+			//---------If Block Count Enable then decrease the block count ---------------
+			$guard(blockCountEnable)
+				blockCountNext:= (blockCount-1)
+			//Check if it is last block 
+			$if(lastBlock ==1)$then
+				presentState1Var:= sdhcRegisters[{PresentState + 1}]
+				presentState0Var:= sdhcRegisters[PresentState]
+				//------------Write Transfer Inactive-----------
+				sdhcRegisters[{PresentState + 1}]:= (presentState1Var & _hfe)
+			$endif
+			//-----Wait till the end of busy bit---------------
+			$merge $entry waitloop $endmerge
+				wait:= DAT0Rx
+			$if(wait == ZERO_1)$then
+				$place[waitloop]
+			$endif
+			//-----------Busy ends with a One-------------------------------
+			$if(lastBlock ==1)$then
+				//-------------DAT Line Active and Command Inhibit (DAT) = 0------------------
+				sdhcRegisters[PresentState]:= (presentState0Var & _hf9)
+				transferComplete := (ZERO_8 | _h02)
+			$endif
+			$rreport(OUTDATA data lastBlock blockCount blockCountEnable)
+		//$endif
+	}
+}

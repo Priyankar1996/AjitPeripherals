@@ -1,0 +1,1407 @@
+$constant  CRC16_CONST : $uint<16>:= _h1020  
+$constant  CRC_CONST : $uint<8>:= _h89  
+$pipe  DAT0Rx : $uint<1>  $depth 1 
+// can point into 
+$pipe  DAT0Tx : $uint<1>  $depth 1 
+// can point into 
+$pipe  DAT1Rx : $uint<1>  $depth 1 
+// can point into 
+$pipe  DAT1Tx : $uint<1>  $depth 1 
+// can point into 
+$pipe  DAT2Rx : $uint<1>  $depth 1 
+// can point into 
+$pipe  DAT2Tx : $uint<1>  $depth 1 
+// can point into 
+$pipe  DAT3Rx : $uint<1>  $depth 1 
+// can point into 
+$pipe  DAT3Tx : $uint<1>  $depth 1 
+// can point into 
+$constant  ONE_1 : $uint<1>:= 1  
+$constant  ONE_2 : $uint<2>:= 1  
+$constant  ONE_8 : $uint<8>:= 1  
+$pipe  SDHC_to_IRC_INT : $uint<1>  $depth 1  $out  $signal 
+// can point into 
+$constant  ZERO_1 : $uint<1>:= 0  
+$constant  ZERO_16 : $uint<16>:= 0  
+$constant  ZERO_2 : $uint<2>:= 0  
+$constant  ZERO_32 : $uint<32>:= 0  
+$constant  ZERO_8 : $uint<8>:= 0  
+$pipe  commandTx : $uint<1>  $depth 1 
+// can point into 
+$pipe  dataBufferRx : $uint<8>  $depth 512 
+// can point into 
+$pipe  dataBufferTx : $uint<8>  $depth 512 
+// can point into 
+$storage  dataErrorInterruptStatus : $uint<8> // memory space index = 10  base address = 0  word size = 8
+// can point into 
+$storage  dataRxEnrty : $uint<1> // memory space index = 7  base address = 0  word size = 1
+// can point into 
+$storage  dataRxEnrty1 : $uint<1> // memory space index = 8  base address = 0  word size = 1
+// can point into 
+$storage  dataRxEnrty2 : $uint<1> // memory space index = 9  base address = 0  word size = 1
+// can point into 
+$pipe  dummy : $uint<1>  $depth 1 
+// can point into 
+$storage  errorInterruptFlag1 : $uint<8> // memory space index = 3  base address = 0  word size = 8
+// can point into 
+$storage  errorInterruptFlag2 : $uint<8> // memory space index = 4  base address = 0  word size = 8
+// can point into 
+$storage  normalInterruptFlag1 : $uint<8> // memory space index = 1  base address = 0  word size = 8
+// can point into 
+$storage  normalInterruptFlag2 : $uint<8> // memory space index = 2  base address = 0  word size = 8
+// can point into 
+$pipe  peripheral_bridge_to_sdhc_request : $uint<64>  $depth 1 
+// can point into 
+$pipe  responseRx : $uint<1>  $depth 1 
+// can point into 
+$storage  rxBufferPointer : $uint<10> // memory space index = 6  base address = 0  word size = 10
+// can point into 
+$storage  sdhcRegisters : $array[256] $of $uint<8> // memory space index = 0  base address = 0  word size = 8
+// can point into 
+$pipe  sdhc_to_peripheral_bridge_response : $uint<32>  $depth 1 
+// can point into 
+$storage  txBufferPointer : $uint<10> // memory space index = 5  base address = 0  word size = 10
+// can point into 
+$module [RW1C]
+$in ( data : $uint<8>   address : $uint<8>  )
+$out ()
+$is
+{
+  current_data := sdhcRegisters[address] $buffering 1// bits of buffering = 8. 
+  $branchblock [rw1c]
+  {
+    d7 := ( $slice data 7 7 )  $buffering 1// bits of buffering = 1. 
+    d6 := ( $slice data 6 6 )  $buffering 1// bits of buffering = 1. 
+    d5 := ( $slice data 5 5 )  $buffering 1// bits of buffering = 1. 
+    d4 := ( $slice data 4 4 )  $buffering 1// bits of buffering = 1. 
+    d3 := ( $slice data 3 3 )  $buffering 1// bits of buffering = 1. 
+    d2 := ( $slice data 2 2 )  $buffering 1// bits of buffering = 1. 
+    d1 := ( $slice data 1 1 )  $buffering 1// bits of buffering = 1. 
+    d0 := ( $slice data 0 0 )  $buffering 1// bits of buffering = 1. 
+    current_d7 := ( $slice current_data 7 7 )  $buffering 1// bits of buffering = 1. 
+    current_d6 := ( $slice current_data 6 6 )  $buffering 1// bits of buffering = 1. 
+    current_d5 := ( $slice current_data 5 5 )  $buffering 1// bits of buffering = 1. 
+    current_d4 := ( $slice current_data 4 4 )  $buffering 1// bits of buffering = 1. 
+    current_d3 := ( $slice current_data 3 3 )  $buffering 1// bits of buffering = 1. 
+    current_d2 := ( $slice current_data 2 2 )  $buffering 1// bits of buffering = 1. 
+    current_d1 := ( $slice current_data 1 1 )  $buffering 1// bits of buffering = 1. 
+    current_d0 := ( $slice current_data 0 0 )  $buffering 1// bits of buffering = 1. 
+    b0 := ( $mux d0 ZERO_1  current_d0 )  $buffering 1// bits of buffering = 1. 
+    b1 := ( $mux d1 ZERO_1  current_d1 )  $buffering 1// bits of buffering = 1. 
+    b2 := ( $mux d2 ZERO_1  current_d2 )  $buffering 1// bits of buffering = 1. 
+    b3 := ( $mux d3 ZERO_1  current_d3 )  $buffering 1// bits of buffering = 1. 
+    b4 := ( $mux d4 ZERO_1  current_d4 )  $buffering 1// bits of buffering = 1. 
+    b5 := ( $mux d5 ZERO_1  current_d5 )  $buffering 1// bits of buffering = 1. 
+    b6 := ( $mux d6 ZERO_1  current_d6 )  $buffering 1// bits of buffering = 1. 
+    b7 := ( $mux d7 ZERO_1  current_d7 )  $buffering 1// bits of buffering = 1. 
+    sdhcRegisters[address] := (((b7 && b6) && (b5 && b4)) && ((b3 && b2) && (b1 && b0))) $buffering 1// bits of buffering = 8. 
+    $if (address == 48) $then 
+    normalInterruptFlag1 := (( ~ data ) & normalInterruptFlag1) $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (address == 49 ) $then 
+    normalInterruptFlag2 := (( ~ data ) & normalInterruptFlag2) $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (address == 50) $then 
+    errorInterruptFlag1 := (( ~ data ) & errorInterruptFlag1) $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (address == 51 ) $then 
+    errorInterruptFlag2 := (( ~ data ) & errorInterruptFlag2) $buffering 1// bits of buffering = 8. 
+    $endif
+  }
+}
+$module [bigResponseWrite]
+$in ( CID : $uint<120>  )
+$out ()
+$is
+{
+  $branchblock [big_resp]
+  {
+    $merge $entry loopback 
+    $phi k := 			  ($bitcast ($uint<8>) 0  ) $on   $entry 			  next_k $on   loopback 
+    // type of target is $uint<8>
+    $phi temp := 			  CID $on   $entry 			  next_temp $on   loopback 
+    // type of target is $uint<120>
+    $endmerge
+    address := (16  + k) $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[address] := ( $slice temp 7 0 )  $buffering 1// bits of buffering = 8. 
+    next_temp := (temp >> 8 ) $buffering 1// bits of buffering = 120. 
+    $volatile next_k := (k + 1 ) $buffering 1
+    $if (next_k < 15 ) $then 
+    $place[loopback]
+    $endif
+  }
+}
+$module [generate_crc_7]
+$in ( message_signal : $uint<40>  )
+$out ( generated_crc : $uint<7>  )
+$is
+{
+  $branchblock [loop]
+  {
+    $merge $entry loopback 
+    $phi I := 			  ($bitcast ($uint<6>) 41  ) $on   $entry 			  next_I $on   loopback 
+    // type of target is $uint<6>
+    $phi crc_out := 			  ( $slice message_signal 39 33 )  $on   $entry 			  final_crc_out $on   loopback 
+    // type of target is $uint<7>
+    $phi temp := 			  ( $slice message_signal 32 0 )  $on   $entry 			  next_temp $on   loopback 
+    // type of target is $uint<33>
+    $endmerge
+    $if ((crc_out [] 6 ) == 1 ) $then 
+    a := (crc_out [] 5 ) $buffering 1// bits of buffering = 1. 
+    b := (crc_out [] 4 ) $buffering 1// bits of buffering = 1. 
+    c := (crc_out [] 3 ) $buffering 1// bits of buffering = 1. 
+    d := ((crc_out [] 2 ) ^ 1 ) $buffering 1// bits of buffering = 1. 
+    e := (crc_out [] 1 ) $buffering 1// bits of buffering = 1. 
+    f := (crc_out [] 0 ) $buffering 1// bits of buffering = 1. 
+    g := ((temp [] 32 ) ^ 1 ) $buffering 1// bits of buffering = 1. 
+    crc_out_true := (((a && b) && (c && d)) && ((e && f) && g)) $buffering 1// bits of buffering = 7. 
+    $place[MSB_true]
+    $else 
+    crc_out_false := (( $slice crc_out 5 0 )  && (temp [] 32 )) $buffering 1// bits of buffering = 7. 
+    $place[MSB_false]
+    $endif
+    $merge MSB_true MSB_false 
+    $phi final_crc_out := 			  crc_out_true $on   MSB_true 			  crc_out_false $on   MSB_false 
+    // type of target is $uint<7>
+    $endmerge
+    $volatile next_I := (I - 1 ) $buffering 1
+    $volatile next_temp := (temp << 1 ) $buffering 1
+    $if (next_I > 0 ) $then 
+    $place[loopback]
+    $endif
+  }
+  ( crc_out => crc_out )
+  generated_crc := crc_out $buffering 1// bits of buffering = 7. 
+}
+$module [generate_crc_7_120]
+$in ( message_signal : $uint<120>  )
+$out ( generated_crc : $uint<7>  )
+$is
+{
+  $branchblock [loop]
+  {
+    $merge $entry loopback 
+    $phi I := 			  ($bitcast ($uint<8>) 121  ) $on   $entry 			  next_I $on   loopback 
+    // type of target is $uint<8>
+    $phi crc_out := 			  ( $slice message_signal 119 113 )  $on   $entry 			  final_crc_out $on   loopback 
+    // type of target is $uint<7>
+    $phi temp := 			  ( $slice message_signal 112 0 )  $on   $entry 			  next_temp $on   loopback 
+    // type of target is $uint<113>
+    $endmerge
+    crc_out_print := (crc_out >> 6 ) $buffering 1// bits of buffering = 7.  Orphaned statement with target crc_out_print ?? 
+    $if ((crc_out [] 6 ) == 1 ) $then 
+    a := (crc_out [] 5 ) $buffering 1// bits of buffering = 1. 
+    b := (crc_out [] 4 ) $buffering 1// bits of buffering = 1. 
+    c := (crc_out [] 3 ) $buffering 1// bits of buffering = 1. 
+    d := ((crc_out [] 2 ) ^ 1 ) $buffering 1// bits of buffering = 1. 
+    e := (crc_out [] 1 ) $buffering 1// bits of buffering = 1. 
+    f := (crc_out [] 0 ) $buffering 1// bits of buffering = 1. 
+    g := ((temp [] 112 ) ^ 1 ) $buffering 1// bits of buffering = 1. 
+    crc_out_true := (((a && b) && (c && d)) && ((e && f) && g)) $buffering 1// bits of buffering = 7. 
+    $place[MSB_true]
+    $else 
+    crc_out_false := (( $slice crc_out 5 0 )  && (temp [] 112 )) $buffering 1// bits of buffering = 7. 
+    $place[MSB_false]
+    $endif
+    $merge MSB_true MSB_false 
+    $phi final_crc_out := 			  crc_out_true $on   MSB_true 			  crc_out_false $on   MSB_false 
+    // type of target is $uint<7>
+    $endmerge
+    $volatile next_I := (I - 1 ) $buffering 1
+    $volatile next_temp := (temp << 1 ) $buffering 1
+    $if (next_I > 0 ) $then 
+    $place[loopback]
+    $endif
+  }
+  ( crc_out => crc_out )
+  generated_crc := crc_out $buffering 1// bits of buffering = 7. 
+}
+$module [dataRx]
+$in ( singleMultipleReadBlock : $uint<1>  )
+$out ( dataErrorInterruptStatusVar1 : $uint<8>  )
+$is
+{
+  $branchblock [data_rx]
+  {
+    presentState1Var := sdhcRegisters[37 ] $buffering 1// bits of buffering = 8. 
+    presentState0Var := sdhcRegisters[36] $buffering 1// bits of buffering = 8. 
+    $if (sdhcRegisters[40] [] 1 ) $then 
+    startBit0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+    $branchblock [dat_receive_4_0]
+    {
+      $merge $entry loopback4_0 
+      $phi I_0 := 					  ($bitcast ($uint<10>) 0  ) $on   $entry 					  next_I_0 $on   loopback4_0 
+      // type of target is $uint<10>
+      $phi dat0 := 					  ($bitcast ($uint<1024>) 0  ) $on   $entry 					  next_data0 $on   loopback4_0 
+      // type of target is $uint<1024>
+      $endmerge
+      bit7_0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit6_0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit5_0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit4_0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit3_0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit2_0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit1_0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit0_0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      next_data0 := ((dat0 << 8 ) | (($bitcast ($uint<1016>) 0  ) && (((bit7_0 && bit6_0) && (bit5_0 && bit4_0)) && ((bit3_0 && bit2_0) && (bit1_0 && bit0_0))))) $buffering 1// bits of buffering = 1024. 
+      next_I_0 := (I_0 + 1 ) $buffering 1// bits of buffering = 10. 
+      $if (next_I_0 < 128 ) $then 
+      $place[loopback4_0]
+      $endif
+    }
+    ( next_data0 => dat0 )
+    $merge $entry crcloopback4_0 
+    $phi K_0 := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_K_0 $on   crcloopback4_0 
+    // type of target is $uint<5>
+    $phi currentCRC_0 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC_0 $on   crcloopback4_0 
+    // type of target is $uint<16>
+    $endmerge
+    nextCRC_0 := ((currentCRC_0 << 1 ) | (($bitcast ($uint<15>) 0  ) && DAT0Rx)) $buffering 1// bits of buffering = 16. 
+    next_K_0 := (K_0 + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_K_0 < 16 ) $then 
+    $place[crcloopback4_0]
+    $endif
+    stopBit0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+    stopBitError0 := (stopBit0 == 0 ) $buffering 1// bits of buffering = 1. 
+    $merge $entry loopback0 
+    $phi J_0 := 				  ($bitcast ($uint<13>) 0  ) $on   $entry 				  next_J_0 $on   loopback0 
+    // type of target is $uint<13>
+    $phi CRC_16_0 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC16_0 $on   loopback0 
+    // type of target is $uint<16>
+    $phi tempData0 := 				  dat0 $on   $entry 				  nextTempData0 $on   loopback0 
+    // type of target is $uint<1024>
+    $endmerge
+    inv0 := ((tempData0 [] 1023 ) ^ (CRC_16_0 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16_0 := (((( $slice CRC_16_0 14 12 )  && ((CRC_16_0 [] 11 ) ^ inv0)) && ( $slice CRC_16_0 10 5 ) ) && ((((CRC_16_0 [] 4 ) ^ inv0) && ( $slice CRC_16_0 3 0 ) ) && inv0)) $buffering 1// bits of buffering = 16. 
+    nextTempData0 := (tempData0 << 1 ) $buffering 1// bits of buffering = 1024. 
+    $volatile next_J_0 := (J_0 + 1 ) $buffering 1
+    $if (next_J_0 < 1024 ) $then 
+    $place[loopback0]
+    $endif
+    crcError0 := (nextCRC_0 != nextCRC16_0) $buffering 1// bits of buffering = 1. 
+    startBit1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+    $branchblock [dat_receive_4_1]
+    {
+      $merge $entry loopback4_1 
+      $phi I_1 := 					  ($bitcast ($uint<10>) 0  ) $on   $entry 					  next_I_1 $on   loopback4_1 
+      // type of target is $uint<10>
+      $phi dat1 := 					  ($bitcast ($uint<1024>) 0  ) $on   $entry 					  next_data1 $on   loopback4_1 
+      // type of target is $uint<1024>
+      $endmerge
+      bit7_1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+      bit6_1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+      bit5_1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+      bit4_1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+      bit3_1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+      bit2_1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+      bit1_1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+      bit0_1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+      next_data1 := ((dat1 << 8 ) | (($bitcast ($uint<1016>) 0  ) && (((bit7_1 && bit6_1) && (bit5_1 && bit4_1)) && ((bit3_1 && bit2_1) && (bit1_1 && bit0_1))))) $buffering 1// bits of buffering = 1024. 
+      next_I_1 := (I_1 + 1 ) $buffering 1// bits of buffering = 10. 
+      $if (next_I_1 < 128 ) $then 
+      $place[loopback4_1]
+      $endif
+    }
+    ( next_data1 => dat1 )
+    $merge $entry crcloopback4_1 
+    $phi K_1 := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_K_1 $on   crcloopback4_1 
+    // type of target is $uint<5>
+    $phi currentCRC_1 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC_1 $on   crcloopback4_1 
+    // type of target is $uint<16>
+    $endmerge
+    nextCRC_1 := ((currentCRC_1 << 1 ) | (($bitcast ($uint<15>) 0  ) && DAT1Rx)) $buffering 1// bits of buffering = 16. 
+    next_K_1 := (K_1 + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_K_1 < 16 ) $then 
+    $place[crcloopback4_1]
+    $endif
+    stopBit1 := DAT1Rx $buffering 1// bits of buffering = 1. 
+    $report (DATAreieve rcv 			 stopBit1 stopBit1 			 dat1 dat1 )
+    stopBitError1 := (stopBit1 == 0 ) $buffering 1// bits of buffering = 1. 
+    $merge $entry loopback1 
+    $phi J_1 := 				  ($bitcast ($uint<13>) 0  ) $on   $entry 				  next_J_1 $on   loopback1 
+    // type of target is $uint<13>
+    $phi CRC_16_1 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC16_1 $on   loopback1 
+    // type of target is $uint<16>
+    $phi tempData1 := 				  dat1 $on   $entry 				  nextTempData1 $on   loopback1 
+    // type of target is $uint<1024>
+    $endmerge
+    inv1 := ((tempData1 [] 1023 ) ^ (CRC_16_1 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16_1 := (((( $slice CRC_16_1 14 12 )  && ((CRC_16_1 [] 11 ) ^ inv1)) && ( $slice CRC_16_1 10 5 ) ) && ((((CRC_16_1 [] 4 ) ^ inv1) && ( $slice CRC_16_1 3 0 ) ) && inv1)) $buffering 1// bits of buffering = 16. 
+    nextTempData1 := (tempData1 << 1 ) $buffering 1// bits of buffering = 1024. 
+    $volatile next_J_1 := (J_1 + 1 ) $buffering 1
+    $if (next_J_1 < 1024 ) $then 
+    $place[loopback1]
+    $endif
+    crcError1 := (nextCRC_1 != nextCRC16_1) $buffering 1// bits of buffering = 1. 
+    startBit2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+    $branchblock [dat_receive_4_2]
+    {
+      $merge $entry loopback4_2 
+      $phi I_2 := 					  ($bitcast ($uint<10>) 0  ) $on   $entry 					  next_I_2 $on   loopback4_2 
+      // type of target is $uint<10>
+      $phi dat2 := 					  ($bitcast ($uint<1024>) 0  ) $on   $entry 					  next_data2 $on   loopback4_2 
+      // type of target is $uint<1024>
+      $endmerge
+      bit7_2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+      bit6_2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+      bit5_2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+      bit4_2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+      bit3_2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+      bit2_2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+      bit1_2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+      bit0_2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+      next_data2 := ((dat2 << 8 ) | (($bitcast ($uint<1016>) 0  ) && (((bit7_2 && bit6_2) && (bit5_2 && bit4_2)) && ((bit3_2 && bit2_2) && (bit1_2 && bit0_2))))) $buffering 1// bits of buffering = 1024. 
+      next_I_2 := (I_2 + 1 ) $buffering 1// bits of buffering = 10. 
+      $if (next_I_2 < 128 ) $then 
+      $place[loopback4_2]
+      $endif
+    }
+    ( next_data2 => dat2 )
+    $merge $entry crcloopback4_2 
+    $phi K_2 := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_K_2 $on   crcloopback4_2 
+    // type of target is $uint<5>
+    $phi currentCRC_2 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC_2 $on   crcloopback4_2 
+    // type of target is $uint<16>
+    $endmerge
+    nextCRC_2 := ((currentCRC_2 << 1 ) | (($bitcast ($uint<15>) 0  ) && DAT2Rx)) $buffering 1// bits of buffering = 16. 
+    next_K_2 := (K_2 + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_K_2 < 16 ) $then 
+    $place[crcloopback4_2]
+    $endif
+    stopBit2 := DAT2Rx $buffering 1// bits of buffering = 1. 
+    stopBitError2 := (stopBit2 == 0 ) $buffering 1// bits of buffering = 1. 
+    $merge $entry loopback2 
+    $phi J_2 := 				  ($bitcast ($uint<13>) 0  ) $on   $entry 				  next_J_2 $on   loopback2 
+    // type of target is $uint<13>
+    $phi CRC_16_2 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC16_2 $on   loopback2 
+    // type of target is $uint<16>
+    $phi tempData2 := 				  dat2 $on   $entry 				  nextTempData2 $on   loopback2 
+    // type of target is $uint<1024>
+    $endmerge
+    inv2 := ((tempData2 [] 1023 ) ^ (CRC_16_2 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16_2 := (((( $slice CRC_16_2 14 12 )  && ((CRC_16_2 [] 11 ) ^ inv2)) && ( $slice CRC_16_2 10 5 ) ) && ((((CRC_16_2 [] 4 ) ^ inv2) && ( $slice CRC_16_2 3 0 ) ) && inv2)) $buffering 1// bits of buffering = 16. 
+    nextTempData2 := (tempData2 << 1 ) $buffering 1// bits of buffering = 1024. 
+    $volatile next_J_2 := (J_2 + 1 ) $buffering 1
+    $if (next_J_2 < 1024 ) $then 
+    $place[loopback2]
+    $endif
+    crcError2 := (nextCRC_2 != nextCRC16_2) $buffering 1// bits of buffering = 1. 
+    startBit3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+    $branchblock [dat_receive_4_3]
+    {
+      $merge $entry loopback4_3 
+      $phi I_3 := 					  ($bitcast ($uint<10>) 0  ) $on   $entry 					  next_I_3 $on   loopback4_3 
+      // type of target is $uint<10>
+      $phi dat3 := 					  ($bitcast ($uint<1024>) 0  ) $on   $entry 					  next_data3 $on   loopback4_3 
+      // type of target is $uint<1024>
+      $endmerge
+      bit7_3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+      bit6_3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+      bit5_3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+      bit4_3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+      bit3_3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+      bit2_3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+      bit1_3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+      bit0_3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+      next_data3 := ((dat3 << 8 ) | (($bitcast ($uint<1016>) 0  ) && (((bit7_3 && bit6_3) && (bit5_3 && bit4_3)) && ((bit3_3 && bit2_3) && (bit1_3 && bit0_3))))) $buffering 1// bits of buffering = 1024. 
+      next_I_3 := (I_3 + 1 ) $buffering 1// bits of buffering = 10. 
+      $if (next_I_3 < 128 ) $then 
+      $place[loopback4_3]
+      $endif
+    }
+    ( next_data3 => dat3 )
+    $merge $entry crcloopback4_3 
+    $phi K_3 := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_K_3 $on   crcloopback4_3 
+    // type of target is $uint<5>
+    $phi currentCRC_3 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC_3 $on   crcloopback4_3 
+    // type of target is $uint<16>
+    $endmerge
+    nextCRC_3 := ((currentCRC_3 << 1 ) | (($bitcast ($uint<15>) 0  ) && DAT3Rx)) $buffering 1// bits of buffering = 16. 
+    next_K_3 := (K_3 + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_K_3 < 16 ) $then 
+    $place[crcloopback4_3]
+    $endif
+    stopBit3 := DAT3Rx $buffering 1// bits of buffering = 1. 
+    stopBitError3 := (stopBit3 == 0 ) $buffering 1// bits of buffering = 1. 
+    $merge $entry loopback3 
+    $phi J_3 := 				  ($bitcast ($uint<13>) 0  ) $on   $entry 				  next_J_3 $on   loopback3 
+    // type of target is $uint<13>
+    $phi CRC_16_3 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC16_3 $on   loopback3 
+    // type of target is $uint<16>
+    $phi tempData3 := 				  dat3 $on   $entry 				  nextTempData3 $on   loopback3 
+    // type of target is $uint<1024>
+    $endmerge
+    inv3 := ((tempData3 [] 1023 ) ^ (CRC_16_3 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16_3 := (((( $slice CRC_16_3 14 12 )  && ((CRC_16_3 [] 11 ) ^ inv3)) && ( $slice CRC_16_3 10 5 ) ) && ((((CRC_16_3 [] 4 ) ^ inv3) && ( $slice CRC_16_3 3 0 ) ) && inv3)) $buffering 1// bits of buffering = 16. 
+    nextTempData3 := (tempData3 << 1 ) $buffering 1// bits of buffering = 1024. 
+    $volatile next_J_3 := (J_3 + 1 ) $buffering 1
+    $if (next_J_3 < 1024 ) $then 
+    $place[loopback3]
+    $endif
+    crcError3 := (nextCRC_3 != nextCRC16_3) $buffering 1// bits of buffering = 1. 
+    rxBufferPointer := ($bitcast ($uint<10>) 512  ) $buffering 1// bits of buffering = 10. 
+    $if (singleMultipleReadBlock == 0 ) $then 
+    sdhcRegisters[36] := (presentState0Var & _hfb ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $merge $entry finaldataloop 
+    $phi B := 				  ($bitcast ($uint<10>) 0  ) $on   $entry 				  next_B $on   finaldataloop 
+    // type of target is $uint<10>
+    $phi dataForBuffer0 := 				  dat0 $on   $entry 				  nextDataForBuffer0 $on   finaldataloop 
+    // type of target is $uint<1024>
+    $phi dataForBuffer1 := 				  dat1 $on   $entry 				  nextDataForBuffer1 $on   finaldataloop 
+    // type of target is $uint<1024>
+    $phi dataForBuffer2 := 				  dat2 $on   $entry 				  nextDataForBuffer2 $on   finaldataloop 
+    // type of target is $uint<1024>
+    $phi dataForBuffer3 := 				  dat3 $on   $entry 				  nextDataForBuffer3 $on   finaldataloop 
+    // type of target is $uint<1024>
+    $endmerge
+    dataBufferRx := ((((dataForBuffer0 [] 1023 ) && (dataForBuffer1 [] 1023 )) && ((dataForBuffer2 [] 1023 ) && (dataForBuffer3 [] 1023 ))) && (((dataForBuffer0 [] 1022 ) && (dataForBuffer1 [] 1022 )) && ((dataForBuffer2 [] 1022 ) && (dataForBuffer3 [] 1022 )))) $buffering 1// bits of buffering = 8. 
+    biff := ((((dataForBuffer0 [] 1023 ) && (dataForBuffer1 [] 1023 )) && ((dataForBuffer2 [] 1023 ) && (dataForBuffer3 [] 1023 ))) && (((dataForBuffer0 [] 1022 ) && (dataForBuffer1 [] 1022 )) && ((dataForBuffer2 [] 1022 ) && (dataForBuffer3 [] 1022 )))) $buffering 1// bits of buffering = 8. 
+    $report (DATA4 buf 			 biff biff )
+    nextDataForBuffer0 := (dataForBuffer0 << 2 ) $buffering 1// bits of buffering = 1024. 
+    nextDataForBuffer1 := (dataForBuffer1 << 2 ) $buffering 1// bits of buffering = 1024. 
+    nextDataForBuffer2 := (dataForBuffer2 << 2 ) $buffering 1// bits of buffering = 1024. 
+    nextDataForBuffer3 := (dataForBuffer3 << 2 ) $buffering 1// bits of buffering = 1024. 
+    next_B := (B + 1 ) $buffering 1// bits of buffering = 10. 
+    $if (next_B < 512 ) $then 
+    $place[finaldataloop]
+    $endif
+    stopBitError_Final := ((stopBitError0 | stopBitError1) | (stopBitError2 | stopBitError3)) $buffering 1// bits of buffering = 1. 
+    crcError_Final := ((crcError0 | crcError1) | (crcError2 | crcError3)) $buffering 1// bits of buffering = 1. 
+    dataErrorInterruptStatusVar1_4 := (((ZERO_1 && stopBitError_Final) && crcError_Final) && ((ZERO_1 && ZERO_2) && ZERO_2)) $buffering 1// bits of buffering = 8. 
+    $else 
+    startBit := DAT0Rx $buffering 1// bits of buffering = 1. 
+    $branchblock [dat_receive]
+    {
+      $merge $entry loopback1 
+      $phi I := 					  ($bitcast ($uint<10>) 0  ) $on   $entry 					  next_I $on   loopback1 
+      // type of target is $uint<10>
+      $phi dat := 					  ($bitcast ($uint<4096>) 0  ) $on   $entry 					  next_data $on   loopback1 
+      // type of target is $uint<4096>
+      $endmerge
+      bit7 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit6 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit5 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit4 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit3 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit2 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit1 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      bit0 := DAT0Rx $buffering 1// bits of buffering = 1. 
+      buffer := (((bit7 && bit6) && (bit5 && bit4)) && ((bit3 && bit2) && (bit1 && bit0))) $buffering 1// bits of buffering = 8.  Orphaned statement with target buffer ?? 
+      dataBufferRx := (((bit7 && bit6) && (bit5 && bit4)) && ((bit3 && bit2) && (bit1 && bit0))) $buffering 1// bits of buffering = 8. 
+      next_data := ((dat << 8 ) | (($bitcast ($uint<4088>) 0  ) && (((bit7 && bit6) && (bit5 && bit4)) && ((bit3 && bit2) && (bit1 && bit0))))) $buffering 1// bits of buffering = 4096. 
+      next_I := (I + 1 ) $buffering 1// bits of buffering = 10. 
+      $if (next_I < 512 ) $then 
+      $place[loopback1]
+      $endif
+    }
+    ( next_data => dat )
+    rxBufferPointer := ($bitcast ($uint<10>) 512  ) $buffering 1// bits of buffering = 10. 
+    $merge $entry crcloopback 
+    $phi K := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_K $on   crcloopback 
+    // type of target is $uint<5>
+    $phi currentCRC := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC $on   crcloopback 
+    // type of target is $uint<16>
+    $endmerge
+    nextCRC := ((currentCRC << 1 ) | (($bitcast ($uint<15>) 0  ) && DAT0Rx)) $buffering 1// bits of buffering = 16. 
+    next_K := (K + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_K < 16 ) $then 
+    $place[crcloopback]
+    $endif
+    stopBit := DAT0Rx $buffering 1// bits of buffering = 1. 
+    $if (singleMultipleReadBlock == 0 ) $then 
+    sdhcRegisters[36] := (presentState0Var & _hfb ) $buffering 1// bits of buffering = 8. 
+    $endif
+    stopBitError := (stopBit == 0 ) $buffering 1// bits of buffering = 1. 
+    $merge $entry loopback 
+    $phi J := 				  ($bitcast ($uint<13>) 0  ) $on   $entry 				  next_J $on   loopback 
+    // type of target is $uint<13>
+    $phi CRC_16 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC16 $on   loopback 
+    // type of target is $uint<16>
+    $phi tempData := 				  dat $on   $entry 				  nextTempData $on   loopback 
+    // type of target is $uint<4096>
+    $endmerge
+    inv := ((tempData [] 4095 ) ^ (CRC_16 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16 := (((( $slice CRC_16 14 12 )  && ((CRC_16 [] 11 ) ^ inv)) && ( $slice CRC_16 10 5 ) ) && ((((CRC_16 [] 4 ) ^ inv) && ( $slice CRC_16 3 0 ) ) && inv)) $buffering 1// bits of buffering = 16. 
+    nextTempData := (tempData << 1 ) $buffering 1// bits of buffering = 4096. 
+    $volatile next_J := (J + 1 ) $buffering 1
+    $if (next_J < 4096 ) $then 
+    $place[loopback]
+    $endif
+    crcError := (nextCRC != nextCRC16) $buffering 1// bits of buffering = 1. 
+    dataRxEnrty := ONE_1 $buffering 1// bits of buffering = 1. 
+    dataErrorInterruptStatusVar1_0 := (((ZERO_1 && stopBitError) && crcError) && ((ZERO_1 && ZERO_2) && ZERO_2)) $buffering 1// bits of buffering = 8. 
+    $endif
+    dataErrorInterruptStatusVar1 := ( $mux (sdhcRegisters[40] [] 1 ) dataErrorInterruptStatusVar1_4  dataErrorInterruptStatusVar1_0 )  $buffering 1// bits of buffering = 8. 
+    $if (singleMultipleReadBlock == 0 ) $then 
+    sdhcRegisters[37 ] := (presentState1Var & _hfd ) $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[36] := (presentState0Var & _hfd ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $report (You check 		 nextCRC16 nextCRC16 		 nextCRC nextCRC 		 rxBufferPointer rxBufferPointer )
+  }
+}
+$module [command_generator]
+$in ()
+$out ( normalInterruptStatusVar1 : $uint<8>   normalInterruptStatusVar2 : $uint<8>   errorInterruptStatusVar1 : $uint<8>   errorInterruptStatusVar2 : $uint<8>   dataErrorInterruptStatusVar1 : $uint<8>   dataTransferComplete : $uint<8>  )
+$is
+{
+  $branchblock [command]
+  {
+    argumentVal3 := sdhcRegisters[11 ] $buffering 1// bits of buffering = 8. 
+    argumentVal2 := sdhcRegisters[10 ] $buffering 1// bits of buffering = 8. 
+    argumentVal1 := sdhcRegisters[9 ] $buffering 1// bits of buffering = 8. 
+    argumentVal0 := sdhcRegisters[8] $buffering 1// bits of buffering = 8. 
+    command40bits := (((ZERO_1 && ONE_1) && (( $slice sdhcRegisters[15 ] 5 0 )  && argumentVal3)) && ((argumentVal2 && argumentVal1) && argumentVal0)) $buffering 1// bits of buffering = 40. 
+    current_crc := ZERO_8 $buffering 1// bits of buffering = 8.  Orphaned statement with target current_crc ?? 
+    $call generate_crc_7 (command40bits ) (crc7 ) 
+    commandbits := ((command40bits && crc7) && ONE_1) $buffering 1// bits of buffering = 48. 
+    $branchblock [send_command]
+    {
+      $merge $entry commandloopback 
+      $phi J := 				  ZERO_8 $on   $entry 				  next_J $on   commandloopback 
+      // type of target is $uint<8>
+      $phi old_commandbits := 				  commandbits $on   $entry 				  new_commandbits $on   commandloopback 
+      // type of target is $uint<48>
+      $endmerge
+      $volatile next_J := (J + 1 ) $buffering 1
+      bit := ( $slice old_commandbits 47 47 )  $buffering 1// bits of buffering = 1. 
+      commandTx := bit $buffering 1// bits of buffering = 1. 
+      new_commandbits := (old_commandbits << 1 ) $buffering 1// bits of buffering = 48. 
+      $if (next_J < 48 ) $then 
+      $place[commandloopback]
+      $endif
+    }
+    response_type := ( $slice sdhcRegisters[14] 1 0 )  $buffering 1// bits of buffering = 2. 
+    dataPresentSelect := (sdhcRegisters[14] [] 5 ) $buffering 1// bits of buffering = 1. 
+    $if (dataPresentSelect == 1 ) $then 
+    txOrRX := (  $bitreduce |  (sdhcRegisters[12] & _h10 ) ) $buffering 1// bits of buffering = 1. 
+    presentState1Var := sdhcRegisters[37 ] $buffering 1// bits of buffering = 8. 
+    presentState0Var := sdhcRegisters[36] $buffering 1// bits of buffering = 8. 
+    $if (response_type != 3 ) $then 
+    sdhcRegisters[37 ] := ( $mux txOrRX (presentState1Var | _h02 )  (presentState1Var | _h01 ) )  $buffering 1// bits of buffering = 8. 
+    $endif
+    sdhcRegisters[36] := (presentState0Var | _h06 ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $report (rsp resp 		 response_type response_type 		 dataPresentSelect dataPresentSelect )
+    $if ((response_type == 2 ) | (response_type == 3 )) $then 
+    $branchblock [receive_response]
+    {
+      $merge $entry responseloopback 
+      $phi J := 					  ($bitcast ($uint<6>) 0  ) $on   $entry 					  next_J $on   responseloopback 
+      // type of target is $uint<6>
+      $phi old_responsebits := 					  ($bitcast ($uint<48>) 0  ) $on   $entry 					  new_responsebits $on   responseloopback 
+      // type of target is $uint<48>
+      $endmerge
+      $volatile next_J := (J + 1 ) $buffering 1
+      responsebit := responseRx $buffering 1// bits of buffering = 1. 
+      responsebits := (($bitcast ($uint<47>) 0  ) && responsebit) $buffering 1// bits of buffering = 48. 
+      new_responsebits := ((old_responsebits << 1 ) | responsebits) $buffering 1// bits of buffering = 48. 
+      $if (next_J < 48 ) $then 
+      $place[responseloopback]
+      $endif
+    }
+    ( new_responsebits => response )
+    $report (gen_comm f 			 response response )
+    $if (response_type == 3 ) $then 
+    $merge $entry waitloop 
+    $endmerge
+    wait := DAT0Rx $buffering 1// bits of buffering = 1. 
+    $if (wait == ZERO_1) $then 
+    $place[waitloop]
+    $endif
+    $endif
+    $if ((sdhcRegisters[14] & _h8 ) == 8 ) $then 
+    $call generate_crc_7 (( $slice response 47 8 )  ) (R1_6_7CRC ) 
+    CommandCRCError := ( $mux (( $slice response 7 1 )  == R1_6_7CRC) _b00000000   _b00000010  )  $buffering 1// bits of buffering = 8. 
+    $endif
+    checkit := ( $slice response 7 1 )  $buffering 1// bits of buffering = 7. 
+    $report (r1crc check 			 CommandCRCError CommandCRCError 			 R1_6_7CRC R1_6_7CRC 			 checkit checkit )
+    $if ((sdhcRegisters[14] & _h10 ) == 16 ) $then 
+    commandIndexCheck := (( $slice sdhcRegisters[15 ] 5 0 )  == ( $slice response 45 40 ) ) $buffering 1// bits of buffering = 1. 
+    CommandIndexError := ( $mux commandIndexCheck _b00000000   _b00001000  )  $buffering 1// bits of buffering = 8. 
+    $endif
+    sdhcRegisters[19 ] := ( $slice response 39 32 )  $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[18 ] := ( $slice response 31 24 )  $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[17 ] := ( $slice response 23 16 )  $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[16 ] := ( $slice response 15 8 )  $buffering 1// bits of buffering = 8. 
+    presentState2 := ((sdhcRegisters[36] >> 1 ) << 1 ) $buffering 1// bits of buffering = 8. 
+    normalInterrupt2 := sdhcRegisters[48] $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[36] := presentState2 $buffering 1// bits of buffering = 8. 
+    commandEndBitError := ( $mux (response [] 0 ) ZERO_8  ($bitcast ($uint<8>) 4  ) )  $buffering 1// bits of buffering = 8. 
+    normalInterruptStatusVar_2 := (normalInterrupt2 | _h01 ) $buffering 1// bits of buffering = 8. 
+    errorInterruptStatusVar_2 := ((CommandIndexError | CommandCRCError) | commandEndBitError) $buffering 1// bits of buffering = 8. 
+    $place[normalInterruptResponse2]
+    $else 
+    $if (response_type == 1 ) $then 
+    $branchblock [receive_bigresponse]
+    {
+      $merge $entry bigresponseloopback 
+      $phi J := 					  ($bitcast ($uint<8>) 0  ) $on   $entry 					  next_J $on   bigresponseloopback 
+      // type of target is $uint<8>
+      $phi old_bigresponsebits := 					  ($bitcast ($uint<136>) 0  ) $on   $entry 					  new_bigresponsebits $on   bigresponseloopback 
+      // type of target is $uint<136>
+      $endmerge
+      $volatile next_J := (J + 1 ) $buffering 1
+      bigresponsebit := responseRx $buffering 1// bits of buffering = 1. 
+      bigresponsebits := (($bitcast ($uint<135>) 0  ) && bigresponsebit) $buffering 1// bits of buffering = 136. 
+      new_bigresponsebits := ((old_bigresponsebits << 1 ) | bigresponsebits) $buffering 1// bits of buffering = 136. 
+      $if (next_J < 136 ) $then 
+      $place[bigresponseloopback]
+      $endif
+    }
+    ( new_bigresponsebits => bigResponse )
+    $report (gen_comm f 			 bigResponse bigResponse )
+    $volatile CID := ( $slice bigResponse 127 8 )  $buffering 1
+    $volatile CID_CRC := ( $slice bigResponse 7 1 )  $buffering 1
+    $if ((sdhcRegisters[14] & _h8 ) == 8 ) $then 
+    $call generate_crc_7_120 (CID ) (R2_CRC ) 
+    CommandCRCError1 := ( $mux (crc7 == R2_CRC) _b00000000   _b00000010  )  $buffering 1// bits of buffering = 8. 
+    $endif
+    commandEndBitError1 := ( $mux (bigResponse [] 0 ) ZERO_8  ($bitcast ($uint<8>) 4  ) )  $buffering 1// bits of buffering = 8. 
+    errorInterruptStatusVar_3 := (CommandCRCError1 | commandEndBitError1) $buffering 1// bits of buffering = 8. 
+    $call bigResponseWrite (CID ) () 
+    $volatile presentState3 := ((sdhcRegisters[36] >> 1 ) << 1 ) $buffering 1
+    $volatile normalInterrupt3 := sdhcRegisters[48] $buffering 1
+    sdhcRegisters[36] := presentState3 $buffering 1// bits of buffering = 8. 
+    normalInterruptStatusVar_3 := (normalInterrupt3 | _h01 ) $buffering 1// bits of buffering = 8. 
+    $place[normalInterruptResponse3]
+    $else 
+    $if (response_type == 0 ) $then 
+    $volatile presentState1 := ((sdhcRegisters[36] >> 1 ) << 1 ) $buffering 1
+    $volatile normalInterrupt1 := sdhcRegisters[48] $buffering 1
+    sdhcRegisters[36] := presentState1 $buffering 1// bits of buffering = 8. 
+    normalInterruptStatusVar_1 := (normalInterrupt1 | _h01 ) $buffering 1// bits of buffering = 8. 
+    errorInterruptStatusVar_1 := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $place[normalInterruptResponse1]
+    $endif
+    $endif
+    $endif
+    $merge normalInterruptResponse1 normalInterruptResponse2 normalInterruptResponse3 
+    $phi normalInterruptStatusVar1 := 			  normalInterruptStatusVar_1 $on   normalInterruptResponse1 			  normalInterruptStatusVar_2 $on   normalInterruptResponse2 			  normalInterruptStatusVar_3 $on   normalInterruptResponse3 
+    // type of target is $uint<8>
+    $phi errorInterruptStatusVar1 := 			  errorInterruptStatusVar_1 $on   normalInterruptResponse1 			  errorInterruptStatusVar_2 $on   normalInterruptResponse2 			  errorInterruptStatusVar_3 $on   normalInterruptResponse3 
+    // type of target is $uint<8>
+    $endmerge
+    $if (dataPresentSelect == 1 ) $then 
+    $if ((txOrRX == 1 ) & (response_type != 3 )) $then 
+    singleMultipleReadBlock := (  $bitreduce |  (sdhcRegisters[12] & _h20 ) ) $buffering 1// bits of buffering = 1. 
+    $call dataRx (singleMultipleReadBlock ) (dataErrorInterruptStatusVar1 ) 
+    dataRxEnrty1 := ONE_1 $buffering 1// bits of buffering = 1. 
+    dataRxEnrty2 := ZERO_1 $buffering 1// bits of buffering = 1. 
+    transferCompleteData := ( $mux singleMultipleReadBlock ($bitcast ($uint<8>) 2  )  ZERO_8 )  $buffering 1// bits of buffering = 8. 
+    $if (singleMultipleReadBlock == 1 ) $then 
+    readBlockCount := (sdhcRegisters[7 ] && sdhcRegisters[6]) $buffering 1// bits of buffering = 16. 
+    newReadBlockCount := (readBlockCount - 1 ) $buffering 1// bits of buffering = 16. 
+    sdhcRegisters[7 ] := ( $slice newReadBlockCount 15 8 )  $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[6] := ( $slice newReadBlockCount 7 0 )  $buffering 1// bits of buffering = 8. 
+    $endif
+    $endif
+    dataTransferComplete := ( $mux (response_type == 3 ) ($bitcast ($uint<8>) 2  )  transferCompleteData )  $buffering 1// bits of buffering = 8. 
+    $endif
+    normalInterruptStatusVar2 := ZERO_8 $buffering 1// bits of buffering = 8. 
+    errorInterruptStatusVar2 := ZERO_8 $buffering 1// bits of buffering = 8. 
+  }
+}
+$module [dataTx]
+$in ( lastBlock : $uint<1>   blockCountEnable : $uint<1>   blockCount : $uint<16>  )
+$out ( blockCountNext : $uint<16>   transferComplete : $uint<8>  )
+$is
+{
+  $branchblock [data]
+  {
+    $if (sdhcRegisters[40] [] 1 ) $then 
+    $branchblock [dat_store_4]
+    {
+      $merge $entry loopback1_4 
+      $phi i := 					  ($bitcast ($uint<10>) 0  ) $on   $entry 					  next_i $on   loopback1_4 
+      // type of target is $uint<10>
+      $phi dat0 := 					  next_data0 $on   loopback1_4 					  ($bitcast ($uint<1024>) 0  ) $on   $entry 
+      // type of target is $uint<1024>
+      $phi dat1 := 					  ($bitcast ($uint<1024>) 0  ) $on   $entry 					  next_data1 $on   loopback1_4 
+      // type of target is $uint<1024>
+      $phi dat2 := 					  ($bitcast ($uint<1024>) 0  ) $on   $entry 					  next_data2 $on   loopback1_4 
+      // type of target is $uint<1024>
+      $phi dat3 := 					  next_data3 $on   loopback1_4 					  ($bitcast ($uint<1024>) 0  ) $on   $entry 
+      // type of target is $uint<1024>
+      $endmerge
+      tempBuffer := dataBufferTx $buffering 1// bits of buffering = 8. 
+      next_data0 := ((dat0 << 2 ) | ((($bitcast ($uint<1022>) 0  ) && (tempBuffer [] 7 )) && (tempBuffer [] 3 ))) $buffering 1// bits of buffering = 1024. 
+      next_data1 := ((dat1 << 2 ) | ((($bitcast ($uint<1022>) 0  ) && (tempBuffer [] 6 )) && (tempBuffer [] 2 ))) $buffering 1// bits of buffering = 1024. 
+      next_data2 := ((dat2 << 2 ) | ((($bitcast ($uint<1022>) 0  ) && (tempBuffer [] 5 )) && (tempBuffer [] 1 ))) $buffering 1// bits of buffering = 1024. 
+      next_data3 := ((dat3 << 2 ) | ((($bitcast ($uint<1022>) 0  ) && (tempBuffer [] 4 )) && (tempBuffer [] 0 ))) $buffering 1// bits of buffering = 1024. 
+      $report (DATAIN next 				 i i 				 tempBuffer tempBuffer 				 next_data0 next_data0 				 next_data1 next_data1 				 next_data2 next_data2 				 next_data3 next_data3 )
+      next_i := (i + 1 ) $buffering 1// bits of buffering = 10. 
+      $if (next_i < 512 ) $then 
+      $place[loopback1_4]
+      $endif
+    }
+    ( next_data0 => dat0  next_data1 => dat1  next_data2 => dat2  next_data3 => dat3 )
+    txBufferPointer := ($bitcast ($uint<10>) 0  ) $buffering 1// bits of buffering = 10. 
+    $merge $entry loopback_dat0 
+    $phi j_0 := 				  ($bitcast ($uint<11>) 0  ) $on   $entry 				  next_j_0 $on   loopback_dat0 
+    // type of target is $uint<11>
+    $phi CRC_16_DAT0 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC16_DAT0 $on   loopback_dat0 
+    // type of target is $uint<16>
+    $phi tempDataD0 := 				  dat0 $on   $entry 				  nextTempDataD0 $on   loopback_dat0 
+    // type of target is $uint<1024>
+    $endmerge
+    invd0 := ((tempDataD0 [] 1023 ) ^ (CRC_16_DAT0 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16_DAT0 := (((( $slice CRC_16_DAT0 14 12 )  && ((CRC_16_DAT0 [] 11 ) ^ invd0)) && ( $slice CRC_16_DAT0 10 5 ) ) && ((((CRC_16_DAT0 [] 4 ) ^ invd0) && ( $slice CRC_16_DAT0 3 0 ) ) && invd0)) $buffering 1// bits of buffering = 16. 
+    nextTempDataD0 := (tempDataD0 << 1 ) $buffering 1// bits of buffering = 1024. 
+    $volatile next_j_0 := (j_0 + 1 ) $buffering 1
+    $if (next_j_0 < 1024 ) $then 
+    $place[loopback_dat0]
+    $endif
+    $merge $entry loopback_dat1 
+    $phi j_1 := 				  ($bitcast ($uint<11>) 0  ) $on   $entry 				  next_j_1 $on   loopback_dat1 
+    // type of target is $uint<11>
+    $phi CRC_16_DAT1 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC16_DAT1 $on   loopback_dat1 
+    // type of target is $uint<16>
+    $phi tempDataD1 := 				  dat1 $on   $entry 				  nextTempDataD1 $on   loopback_dat1 
+    // type of target is $uint<1024>
+    $endmerge
+    invd1 := ((tempDataD1 [] 1023 ) ^ (CRC_16_DAT1 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16_DAT1 := (((( $slice CRC_16_DAT1 14 12 )  && ((CRC_16_DAT1 [] 11 ) ^ invd1)) && ( $slice CRC_16_DAT1 10 5 ) ) && ((((CRC_16_DAT1 [] 4 ) ^ invd1) && ( $slice CRC_16_DAT1 3 0 ) ) && invd1)) $buffering 1// bits of buffering = 16. 
+    nextTempDataD1 := (tempDataD1 << 1 ) $buffering 1// bits of buffering = 1024. 
+    $volatile next_j_1 := (j_1 + 1 ) $buffering 1
+    $if (next_j_1 < 1024 ) $then 
+    $place[loopback_dat1]
+    $endif
+    $merge $entry loopback_dat2 
+    $phi j_2 := 				  ($bitcast ($uint<11>) 0  ) $on   $entry 				  next_j_2 $on   loopback_dat2 
+    // type of target is $uint<11>
+    $phi CRC_16_DAT2 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC16_DAT2 $on   loopback_dat2 
+    // type of target is $uint<16>
+    $phi tempDataD2 := 				  dat2 $on   $entry 				  nextTempDataD2 $on   loopback_dat2 
+    // type of target is $uint<1024>
+    $endmerge
+    invd2 := ((tempDataD2 [] 1023 ) ^ (CRC_16_DAT2 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16_DAT2 := (((( $slice CRC_16_DAT2 14 12 )  && ((CRC_16_DAT2 [] 11 ) ^ invd2)) && ( $slice CRC_16_DAT2 10 5 ) ) && ((((CRC_16_DAT2 [] 4 ) ^ invd2) && ( $slice CRC_16_DAT2 3 0 ) ) && invd2)) $buffering 1// bits of buffering = 16. 
+    nextTempDataD2 := (tempDataD2 << 1 ) $buffering 1// bits of buffering = 1024. 
+    $volatile next_j_2 := (j_2 + 1 ) $buffering 1
+    $if (next_j_2 < 1024 ) $then 
+    $place[loopback_dat2]
+    $endif
+    $merge $entry loopback_dat3 
+    $phi j_3 := 				  ($bitcast ($uint<11>) 0  ) $on   $entry 				  next_j_3 $on   loopback_dat3 
+    // type of target is $uint<11>
+    $phi CRC_16_DAT3 := 				  nextCRC16_DAT3 $on   loopback_dat3 				  ($bitcast ($uint<16>) 0  ) $on   $entry 
+    // type of target is $uint<16>
+    $phi tempDataD3 := 				  dat3 $on   $entry 				  nextTempDataD3 $on   loopback_dat3 
+    // type of target is $uint<1024>
+    $endmerge
+    invd3 := ((tempDataD3 [] 1023 ) ^ (CRC_16_DAT3 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16_DAT3 := (((( $slice CRC_16_DAT3 14 12 )  && ((CRC_16_DAT3 [] 11 ) ^ invd3)) && ( $slice CRC_16_DAT3 10 5 ) ) && ((((CRC_16_DAT3 [] 4 ) ^ invd3) && ( $slice CRC_16_DAT3 3 0 ) ) && invd3)) $buffering 1// bits of buffering = 16. 
+    nextTempDataD3 := (tempDataD3 << 1 ) $buffering 1// bits of buffering = 1024. 
+    $volatile next_j_3 := (j_3 + 1 ) $buffering 1
+    $if (next_j_3 < 1024 ) $then 
+    $place[loopback_dat3]
+    $endif
+    DAT0Tx := ZERO_1 $buffering 1// bits of buffering = 1. 
+    $merge $entry dataloop4_0 
+    $phi k_0 := 				  ($bitcast ($uint<11>) 0  ) $on   $entry 				  next_k_0 $on   dataloop4_0 
+    // type of target is $uint<11>
+    $phi dat0bit4_0 := 				  dat0 $on   $entry 				  nextbit4_0 $on   dataloop4_0 
+    // type of target is $uint<1024>
+    $endmerge
+    DAT0Tx := (dat0bit4_0 [] 1023 ) $buffering 1// bits of buffering = 1. 
+    nextbit4_0 := (dat0bit4_0 << 1 ) $buffering 1// bits of buffering = 1024. 
+    next_k_0 := (k_0 + 1 ) $buffering 1// bits of buffering = 11. 
+    $if (next_k_0 < 1024 ) $then 
+    $place[dataloop4_0]
+    $endif
+    $merge $entry crcloop4_0 
+    $phi l_0 := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_l_0 $on   crcloop4_0 
+    // type of target is $uint<5>
+    $phi dat0crc4 := 				  nextCRC16_DAT0 $on   $entry 				  nextbitcrc4_0 $on   crcloop4_0 
+    // type of target is $uint<16>
+    $endmerge
+    DAT0Tx := (dat0crc4 [] 15 ) $buffering 1// bits of buffering = 1. 
+    nextbitcrc4_0 := (dat0crc4 << 1 ) $buffering 1// bits of buffering = 16. 
+    next_l_0 := (l_0 + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_l_0 < 16 ) $then 
+    $place[crcloop4_0]
+    $endif
+    DAT0Tx := ONE_1 $buffering 1// bits of buffering = 1. 
+    $report (OUTDATA0 data 			 lastBlock lastBlock )
+    DAT1Tx := ZERO_1 $buffering 1// bits of buffering = 1. 
+    $merge $entry dataloop4_1 
+    $phi k_1 := 				  ($bitcast ($uint<11>) 0  ) $on   $entry 				  next_k_1 $on   dataloop4_1 
+    // type of target is $uint<11>
+    $phi dat0bit4_1 := 				  dat1 $on   $entry 				  nextbit4_1 $on   dataloop4_1 
+    // type of target is $uint<1024>
+    $endmerge
+    DAT1Tx := (dat0bit4_1 [] 1023 ) $buffering 1// bits of buffering = 1. 
+    nextbit4_1 := (dat0bit4_1 << 1 ) $buffering 1// bits of buffering = 1024. 
+    next_k_1 := (k_1 + 1 ) $buffering 1// bits of buffering = 11. 
+    $if (next_k_1 < 1024 ) $then 
+    $place[dataloop4_1]
+    $endif
+    $merge $entry crcloop4_1 
+    $phi l_1 := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_l_1 $on   crcloop4_1 
+    // type of target is $uint<5>
+    $phi dat1crc4 := 				  nextCRC16_DAT1 $on   $entry 				  nextbitcrc4_1 $on   crcloop4_1 
+    // type of target is $uint<16>
+    $endmerge
+    DAT1Tx := (dat1crc4 [] 15 ) $buffering 1// bits of buffering = 1. 
+    nextbitcrc4_1 := (dat1crc4 << 1 ) $buffering 1// bits of buffering = 16. 
+    next_l_1 := (l_1 + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_l_1 < 16 ) $then 
+    $place[crcloop4_1]
+    $endif
+    DAT1Tx := ONE_1 $buffering 1// bits of buffering = 1. 
+    DAT2Tx := ZERO_1 $buffering 1// bits of buffering = 1. 
+    $merge $entry dataloop4_2 
+    $phi k_2 := 				  ($bitcast ($uint<11>) 0  ) $on   $entry 				  next_k_2 $on   dataloop4_2 
+    // type of target is $uint<11>
+    $phi dat0bit4_2 := 				  dat2 $on   $entry 				  nextbit4_2 $on   dataloop4_2 
+    // type of target is $uint<1024>
+    $endmerge
+    DAT2Tx := (dat0bit4_2 [] 1023 ) $buffering 1// bits of buffering = 1. 
+    nextbit4_2 := (dat0bit4_2 << 1 ) $buffering 1// bits of buffering = 1024. 
+    next_k_2 := (k_2 + 1 ) $buffering 1// bits of buffering = 11. 
+    $if (next_k_2 < 1024 ) $then 
+    $place[dataloop4_2]
+    $endif
+    $merge $entry crcloop4_2 
+    $phi l_2 := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_l_2 $on   crcloop4_2 
+    // type of target is $uint<5>
+    $phi dat2crc4 := 				  nextCRC16_DAT2 $on   $entry 				  nextbitcrc4_2 $on   crcloop4_2 
+    // type of target is $uint<16>
+    $endmerge
+    DAT2Tx := (dat2crc4 [] 15 ) $buffering 1// bits of buffering = 1. 
+    nextbitcrc4_2 := (dat2crc4 << 1 ) $buffering 1// bits of buffering = 16. 
+    next_l_2 := (l_2 + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_l_2 < 16 ) $then 
+    $place[crcloop4_2]
+    $endif
+    DAT2Tx := ONE_1 $buffering 1// bits of buffering = 1. 
+    $report (OUTDATA2 data 			 lastBlock lastBlock )
+    DAT3Tx := ZERO_1 $buffering 1// bits of buffering = 1. 
+    $merge $entry dataloop4_3 
+    $phi k_3 := 				  ($bitcast ($uint<11>) 0  ) $on   $entry 				  next_k_3 $on   dataloop4_3 
+    // type of target is $uint<11>
+    $phi dat0bit4_3 := 				  dat3 $on   $entry 				  nextbit4_3 $on   dataloop4_3 
+    // type of target is $uint<1024>
+    $endmerge
+    DAT3Tx := (dat0bit4_3 [] 1023 ) $buffering 1// bits of buffering = 1. 
+    nextbit4_3 := (dat0bit4_3 << 1 ) $buffering 1// bits of buffering = 1024. 
+    next_k_3 := (k_3 + 1 ) $buffering 1// bits of buffering = 11. 
+    $if (next_k_3 < 1024 ) $then 
+    $place[dataloop4_3]
+    $endif
+    $merge $entry crcloop4_3 
+    $phi l_3 := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_l_3 $on   crcloop4_3 
+    // type of target is $uint<5>
+    $phi dat3crc4 := 				  nextCRC16_DAT3 $on   $entry 				  nextbitcrc4_3 $on   crcloop4_3 
+    // type of target is $uint<16>
+    $endmerge
+    DAT3Tx := (dat3crc4 [] 15 ) $buffering 1// bits of buffering = 1. 
+    nextbitcrc4_3 := (dat3crc4 << 1 ) $buffering 1// bits of buffering = 16. 
+    next_l_3 := (l_3 + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_l_3 < 16 ) $then 
+    $place[crcloop4_3]
+    $endif
+    DAT3Tx := ONE_1 $buffering 1// bits of buffering = 1. 
+    $report (OUTDATA3 data 			 lastBlock lastBlock )
+    $report (END transmission 			 dat0 dat0 			 dat1 dat1 			 dat2 dat2 			 dat3 dat3 )
+    $else 
+    $branchblock [dat_store]
+    {
+      $merge $entry loopback1 
+      $phi I := 					  ($bitcast ($uint<10>) 0  ) $on   $entry 					  next_I $on   loopback1 
+      // type of target is $uint<10>
+      $phi dat := 					  ($bitcast ($uint<4096>) 0  ) $on   $entry 					  next_data $on   loopback1 
+      // type of target is $uint<4096>
+      $endmerge
+      next_data := ((dat << 8 ) | (($bitcast ($uint<4088>) 0  ) && dataBufferTx)) $buffering 1// bits of buffering = 4096. 
+      next_I := (I + 1 ) $buffering 1// bits of buffering = 10. 
+      $if (next_I < 512 ) $then 
+      $place[loopback1]
+      $endif
+    }
+    ( next_data => dat )
+    txBufferPointer := ($bitcast ($uint<10>) 0  ) $buffering 1// bits of buffering = 10. 
+    $merge $entry loopback 
+    $phi J := 				  ($bitcast ($uint<13>) 0  ) $on   $entry 				  next_J $on   loopback 
+    // type of target is $uint<13>
+    $phi CRC_16 := 				  ($bitcast ($uint<16>) 0  ) $on   $entry 				  nextCRC16 $on   loopback 
+    // type of target is $uint<16>
+    $phi tempData := 				  dat $on   $entry 				  nextTempData $on   loopback 
+    // type of target is $uint<4096>
+    $endmerge
+    inv := ((tempData [] 4095 ) ^ (CRC_16 [] 15 )) $buffering 1// bits of buffering = 1. 
+    nextCRC16 := (((( $slice CRC_16 14 12 )  && ((CRC_16 [] 11 ) ^ inv)) && ( $slice CRC_16 10 5 ) ) && ((((CRC_16 [] 4 ) ^ inv) && ( $slice CRC_16 3 0 ) ) && inv)) $buffering 1// bits of buffering = 16. 
+    nextTempData := (tempData << 1 ) $buffering 1// bits of buffering = 4096. 
+    $volatile next_J := (J + 1 ) $buffering 1
+    $if (next_J < 4096 ) $then 
+    $place[loopback]
+    $endif
+    $report (OUTDATA data 			 dat dat 			 nextCRC16 nextCRC16 			 lastBlock lastBlock )
+    DAT0Tx := ZERO_1 $buffering 1// bits of buffering = 1. 
+    $merge $entry dataloop 
+    $phi K := 				  ($bitcast ($uint<13>) 0  ) $on   $entry 				  next_K $on   dataloop 
+    // type of target is $uint<13>
+    $phi dat0bit := 				  dat $on   $entry 				  nextbit $on   dataloop 
+    // type of target is $uint<4096>
+    $endmerge
+    DAT0Tx := (dat0bit [] 4095 ) $buffering 1// bits of buffering = 1. 
+    nextbit := (dat0bit << 1 ) $buffering 1// bits of buffering = 4096. 
+    next_K := (K + 1 ) $buffering 1// bits of buffering = 13. 
+    $if (next_K < 4096 ) $then 
+    $place[dataloop]
+    $endif
+    $merge $entry crcloop 
+    $phi L := 				  ($bitcast ($uint<5>) 0  ) $on   $entry 				  next_L $on   crcloop 
+    // type of target is $uint<5>
+    $phi dat0crc := 				  nextCRC16 $on   $entry 				  nextbitcrc $on   crcloop 
+    // type of target is $uint<16>
+    $endmerge
+    DAT0Tx := (dat0crc [] 15 ) $buffering 1// bits of buffering = 1. 
+    nextbitcrc := (dat0crc << 1 ) $buffering 1// bits of buffering = 16. 
+    next_L := (L + 1 ) $buffering 1// bits of buffering = 5. 
+    $if (next_L < 16 ) $then 
+    $place[crcloop]
+    $endif
+    DAT0Tx := ONE_1 $buffering 1// bits of buffering = 1. 
+    $endif
+    $guard (blockCountEnable) blockCountNext := (blockCount - 1 ) $buffering 1// bits of buffering = 16. 
+    $if (lastBlock == 1 ) $then 
+    presentState1Var := sdhcRegisters[37 ] $buffering 1// bits of buffering = 8. 
+    presentState0Var := sdhcRegisters[36] $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[37 ] := (presentState1Var & _hfe ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $merge $entry waitloop 
+    $endmerge
+    wait := DAT0Rx $buffering 1// bits of buffering = 1. 
+    $if (wait == ZERO_1) $then 
+    $place[waitloop]
+    $endif
+    $if (lastBlock == 1 ) $then 
+    sdhcRegisters[36] := (presentState0Var & _hf9 ) $buffering 1// bits of buffering = 8. 
+    transferComplete := (ZERO_8 | _h02 ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $report (OUTDATA data 		 lastBlock lastBlock 		 blockCount blockCount 		 blockCountEnable blockCountEnable )
+  }
+}
+$module [global_storage_initializer_]
+$in ()
+$out ()
+$is
+{
+  $null
+}
+$module [resetRegisters]
+$in ( resetCondition : $uint<2>  )
+$out ()
+$is
+{
+  sdhcRegisters[64] := _h8A  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[65 ] := _h64  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[66 ] := _h20  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[67 ] := _h05  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[68 ] := _h31  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[69 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[70 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[71 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[72] := _h64  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[73 ] := _h96  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[74 ] := _hC8  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[75 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[76 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[77 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[78 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[79 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[96] := _h7D  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[97 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[98 ] := _h02  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[99 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[100 ] := _h01  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[101 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[102 ] := _h04  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[103 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[104 ] := _h02  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[105 ] := _h40  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[106 ] := _h01  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[107 ] := _h80  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[108 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[109 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[110 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[111 ] := _h00  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[254] := _h02  $buffering 1// bits of buffering = 8. 
+  sdhcRegisters[255 ] := _h00  $buffering 1// bits of buffering = 8. 
+  $branchblock [resetRegister]
+  {
+    $merge $entry loopback 
+    $phi I := 			  ($bitcast ($uint<9>) 0  ) $on   $entry 			  next_I $on   loopback 
+    // type of target is $uint<9>
+    $endmerge
+    current_register_value := sdhcRegisters[I] $buffering 1// bits of buffering = 8. 
+    current_softwarereset_register_value := sdhcRegisters[47] $buffering 1// bits of buffering = 8. 
+    $volatile condition := ((I >= 64) & (I < 72 )) $buffering 1
+    $volatile condition2 := ((I >= 72) & (I < 80 )) $buffering 1
+    $volatile condition3 := ((I >= 96) & (I < 112 )) $buffering 1
+    $volatile condition4 := ((I >= 254) & (I < 256 )) $buffering 1
+    $if ((condition | condition2) | (condition3 | condition4)) $then 
+    $null
+    $else 
+    $if (resetCondition == ZERO_2) $then 
+    sdhcRegisters[I] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $else 
+    $if ((resetCondition == ONE_2) & ((I == 36) | (I == 48))) $then 
+    sdhcRegisters[I] := (current_register_value & _hfe ) $buffering 1// bits of buffering = 8. 
+    $else 
+    $if (resetCondition == ($bitcast ($uint<2>) 2  )) $then 
+    $if ((I >= 32) & (I < 36 )) $then 
+    sdhcRegisters[I] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (I == 36) $then 
+    sdhcRegisters[I] := (current_register_value & _h09 ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (I == 37 ) $then 
+    sdhcRegisters[I] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (I == 42) $then 
+    sdhcRegisters[I] := (current_register_value & _h0C ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (I == 48) $then 
+    sdhcRegisters[I] := (current_register_value & _hC1 ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $endif
+    $endif
+    $endif
+    $endif
+    $volatile next_I := (I + 1 ) $buffering 1
+    $if (next_I < 256 ) $then 
+    $place[loopback]
+    $endif
+    $if (resetCondition == ONE_2) $then 
+    sdhcRegisters[47] := (current_softwarereset_register_value & _hfd ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (resetCondition == ($bitcast ($uint<2>) 2  )) $then 
+    sdhcRegisters[47] := (current_softwarereset_register_value & _hfb ) $buffering 1// bits of buffering = 8. 
+    $endif
+  }
+}
+$module [sdhc_register_write]
+$in ( address : $uint<8>   data : $uint<8>  )
+$out ()
+$is
+{
+  $branchblock [write_register]
+  {
+    $switch address
+    $when 5  $then 
+    sdhcRegisters[address] := (data & _h7f ) $buffering 1// bits of buffering = 8. 
+    $when 12 $then 
+    sdhcRegisters[address] := (data & _h3f ) $buffering 1// bits of buffering = 8. 
+    $when 13  $then 
+    sdhcRegisters[address] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $when 14 $then 
+    sdhcRegisters[address] := (data & _hfb ) $buffering 1// bits of buffering = 8. 
+    $when 15  $then 
+    sdhcRegisters[address] := (data & _h3f ) $buffering 1// bits of buffering = 8. 
+    $when 16 $then 
+    $null
+    $when 17  $then 
+    $null
+    $when 18  $then 
+    $null
+    $when 19  $then 
+    $null
+    $when 20 $then 
+    $null
+    $when 21  $then 
+    $null
+    $when 22  $then 
+    $null
+    $when 23  $then 
+    $null
+    $when 24 $then 
+    $null
+    $when 25  $then 
+    $null
+    $when 26  $then 
+    $null
+    $when 27  $then 
+    $null
+    $when 28 $then 
+    $null
+    $when 29  $then 
+    $null
+    $when 30  $then 
+    $null
+    $when 31  $then 
+    $null
+    $when 36 $then 
+    $null
+    $when 37  $then 
+    $null
+    $when 38  $then 
+    $null
+    $when 39  $then 
+    $null
+    $when 41 $then 
+    sdhcRegisters[address] := (data & _hf ) $buffering 1// bits of buffering = 8. 
+    $when 46 $then 
+    sdhcRegisters[address] := (data & _hf ) $buffering 1// bits of buffering = 8. 
+    $when 47 $then 
+    sdhcRegisters[address] := (data & _h7 ) $buffering 1// bits of buffering = 8. 
+    $when 48 $then 
+    $call RW1C (data address ) () 
+    $when 49  $then 
+    $null
+    $when 50 $then 
+    $call RW1C (data address ) () 
+    $when 51  $then 
+    $call RW1C (data address ) () 
+    $when 53  $then 
+    sdhcRegisters[address] := (data & _h1f ) $buffering 1// bits of buffering = 8. 
+    $when 55  $then 
+    sdhcRegisters[address] := (data & _hf7 ) $buffering 1// bits of buffering = 8. 
+    $when 57  $then 
+    sdhcRegisters[address] := (data & _h1f ) $buffering 1// bits of buffering = 8. 
+    $when 59  $then 
+    sdhcRegisters[address] := (data & _hf7 ) $buffering 1// bits of buffering = 8. 
+    $when 60 $then 
+    $null
+    $when 61  $then 
+    sdhcRegisters[address] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $when 63  $then 
+    sdhcRegisters[address] := (data & _hC0 ) $buffering 1// bits of buffering = 8. 
+    $when 64 $then 
+    $null
+    $when 65  $then 
+    $null
+    $when 66  $then 
+    $null
+    $when 67  $then 
+    $null
+    $when 68  $then 
+    $null
+    $when 69  $then 
+    $null
+    $when 70  $then 
+    $null
+    $when 71  $then 
+    sdhcRegisters[address] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $when 72 $then 
+    $null
+    $when 73  $then 
+    $null
+    $when 74  $then 
+    $null
+    $when 75  $then 
+    sdhcRegisters[address] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $when 76  $then 
+    sdhcRegisters[address] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $when 77  $then 
+    sdhcRegisters[address] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $when 78  $then 
+    sdhcRegisters[address] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $when 79  $then 
+    sdhcRegisters[address] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    $when 96 $then 
+    $null
+    $when 97  $then 
+    $null
+    $when 98  $then 
+    $null
+    $when 99  $then 
+    $null
+    $when 100  $then 
+    $null
+    $when 101  $then 
+    $null
+    $when 102  $then 
+    $null
+    $when 103  $then 
+    $null
+    $when 104  $then 
+    $null
+    $when 105  $then 
+    $null
+    $when 106  $then 
+    $null
+    $when 107  $then 
+    $null
+    $when 108  $then 
+    $null
+    $when 109  $then 
+    $null
+    $when 110  $then 
+    $null
+    $when 111  $then 
+    $null
+    $when 254 $then 
+    $null
+    $when 255  $then 
+    $null
+    $default 
+    sdhcRegisters[address] := data $buffering 1// bits of buffering = 8. 
+    $endswitch 
+  }
+}
+$module [sdhc_daemon]
+$in ()
+$out ()
+$is
+{
+  SDHC_to_IRC_INT := ZERO_1 $buffering 1// bits of buffering = 1. 
+  normalInterruptFlag1 := _hFF  $buffering 1// bits of buffering = 8. 
+  normalInterruptFlag2 := _hFF  $buffering 1// bits of buffering = 8. 
+  errorInterruptFlag1 := _hFF  $buffering 1// bits of buffering = 8. 
+  errorInterruptFlag2 := _hFF  $buffering 1// bits of buffering = 8. 
+  txBufferPointer := ($bitcast ($uint<10>) 0  ) $buffering 1// bits of buffering = 10. 
+  rxBufferPointer := ($bitcast ($uint<10>) 0  ) $buffering 1// bits of buffering = 10. 
+  dataRxEnrty := ZERO_1 $buffering 1// bits of buffering = 1. 
+  dataRxEnrty1 := ZERO_1 $buffering 1// bits of buffering = 1. 
+  dataRxEnrty2 := ZERO_1 $buffering 1// bits of buffering = 1. 
+  dataErrorInterruptStatus := ZERO_8 $buffering 1// bits of buffering = 8. 
+  $call resetRegisters (ZERO_2 ) () 
+  $branchblock [loop]
+  {
+    $merge $entry loopback 
+    $endmerge
+    request := peripheral_bridge_to_sdhc_request $buffering 1// bits of buffering = 64. 
+    $volatile rwbar := ( $slice request 63 63 )  $buffering 1
+    $volatile bytemask := ( $slice request 62 59 )  $buffering 1
+    $volatile unused := ( $slice request 58 56 )  $buffering 1
+    $volatile addressunused := ( $slice request 55 40 )  $buffering 1
+    $volatile address := ( $slice request 39 32 )  $buffering 1
+    $volatile data3 := ( $slice request 31 24 )  $buffering 1
+    $volatile data2 := ( $slice request 23 16 )  $buffering 1
+    $volatile data1 := ( $slice request 15 8 )  $buffering 1
+    $volatile data0 := ( $slice request 7 0 )  $buffering 1
+    $volatile b3 := ( $slice bytemask 3 3 )  $buffering 1
+    $volatile b2 := ( $slice bytemask 2 2 )  $buffering 1
+    $volatile b1 := ( $slice bytemask 1 1 )  $buffering 1
+    $volatile b0 := ( $slice bytemask 0 0 )  $buffering 1
+    $if (rwbar == 0 ) $then 
+    $guard (b3) $call sdhc_register_write (address data3 ) () 
+    $guard (b2) $call sdhc_register_write ((address + 1 ) data2 ) () 
+    $guard (b1) $call sdhc_register_write ((address + 2 ) data1 ) () 
+    $guard (b0) $call sdhc_register_write ((address + 3 ) data0 ) () 
+    sdhc_to_peripheral_bridge_response := ZERO_32 $buffering 1// bits of buffering = 32. 
+    $if ((address + 3 ) == 47) $then 
+    $if (sdhcRegisters[47] [] 0 ) $then 
+    $call resetRegisters (ZERO_2 ) () 
+    $endif
+    $if (sdhcRegisters[47] [] 1 ) $then 
+    $call resetRegisters (ONE_2 ) () 
+    $endif
+    $if (sdhcRegisters[47] [] 2 ) $then 
+    $call resetRegisters (($bitcast ($uint<2>) 2  ) ) () 
+    $endif
+    $endif
+    $volatile commandInhibit_CMD := ((sdhcRegisters[36] & _h01 ) == 0 ) $buffering 1
+    $volatile addresscheck := (((address + 3 ) == _h0f ) & b0) $buffering 1
+    $volatile presentState := ((sdhcRegisters[36] >> 1 ) << 1 ) $buffering 1
+    $if (addresscheck & commandInhibit_CMD) $then 
+    sdhcRegisters[36] := (presentState | _h01 ) $buffering 1// bits of buffering = 8. 
+    dataRxEnrty1 := ZERO_1 $buffering 1// bits of buffering = 1. 
+    dataRxEnrty2 := ZERO_1 $buffering 1// bits of buffering = 1. 
+    $call command_generator () (normalInterruptStatusVar1 normalInterruptStatusVar2 errorInterruptStatusVar1 errorInterruptStatusVar2 dataErrorInterruptStatusVar1 dataTransferComplete ) 
+    normalInterruptFlag1 := _hFF  $buffering 1// bits of buffering = 8. 
+    normalInterruptFlag2 := _hFF  $buffering 1// bits of buffering = 8. 
+    errorInterruptFlag1 := _hFF  $buffering 1// bits of buffering = 8. 
+    errorInterruptFlag2 := _hFF  $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (rxBufferPointer > 0 ) $then 
+    sdhcRegisters[37 ] := (sdhcRegisters[37 ] | _h08 ) $buffering 1// bits of buffering = 8. 
+    bufferReadReady := (ZERO_8 | _h20 ) $buffering 1// bits of buffering = 8. 
+    normalInterruptFlag1 := (normalInterruptFlag1 | _h20 ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $if (txBufferPointer < 512 ) $then 
+    sdhcRegisters[37 ] := (sdhcRegisters[37 ] | _h04 ) $buffering 1// bits of buffering = 8. 
+    bufferWriteReady := (ZERO_8 | _h10 ) $buffering 1// bits of buffering = 8. 
+    normalInterruptFlag1 := (normalInterruptFlag1 | _h10 ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $volatile bufferDataPortCheck := (address == 32 ) $buffering 1
+    $if ((bufferDataPortCheck == 1 ) & (txBufferPointer < 512 )) $then 
+    dataBufferTx := sdhcRegisters[32 ] $buffering 1// bits of buffering = 8. 
+    dataBufferTx := sdhcRegisters[33 ] $buffering 1// bits of buffering = 8. 
+    dataBufferTx := sdhcRegisters[34 ] $buffering 1// bits of buffering = 8. 
+    dataBufferTx := sdhcRegisters[35 ] $buffering 1// bits of buffering = 8. 
+    txBufferPointer := (txBufferPointer + 4 ) $buffering 1// bits of buffering = 10. 
+    $if (txBufferPointer == 512 ) $then 
+    sdhcRegisters[37 ] := (sdhcRegisters[37 ] & _hfb ) $buffering 1// bits of buffering = 8. 
+    singleMultipleBlock := (  $bitreduce |  (sdhcRegisters[12] & _h20 ) ) $buffering 1// bits of buffering = 1. 
+    blockCountEnable := ((  $bitreduce |  (sdhcRegisters[12] & _h02 ) ) & singleMultipleBlock) $buffering 1// bits of buffering = 1. 
+    blockCount := (sdhcRegisters[7 ] && sdhcRegisters[6]) $buffering 1// bits of buffering = 16. 
+    blockCountTrue := (blockCount == 1 ) $buffering 1// bits of buffering = 1. 
+    lastBlock := (( ~ singleMultipleBlock ) | (blockCountEnable & blockCountTrue)) $buffering 1// bits of buffering = 1. 
+    $call dataTx (lastBlock blockCountEnable blockCount ) (blockCountNext transferComplete ) 
+    sdhcRegisters[7 ] := ( $slice blockCountNext 15 8 )  $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[6] := ( $slice blockCountNext 7 0 )  $buffering 1// bits of buffering = 8. 
+    normalInterruptFlag1 := (normalInterruptFlag1 | _h02 ) $buffering 1// bits of buffering = 8. 
+    errorInterruptFlag1 := (errorInterruptFlag1 | _h60 ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $endif
+    $else 
+    $volatile readBufferDataPortCheck := (address == 32 ) $buffering 1
+    $if ((readBufferDataPortCheck == 1 ) & (rxBufferPointer != 0 )) $then 
+    sdhcRegisters[32] := dataBufferRx $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[33 ] := dataBufferRx $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[34 ] := dataBufferRx $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[35 ] := dataBufferRx $buffering 1// bits of buffering = 8. 
+    rxBufferPointer := (rxBufferPointer - 4 ) $buffering 1// bits of buffering = 10. 
+    singleMultipleReadBlock := (  $bitreduce |  (sdhcRegisters[12] & _h20 ) ) $buffering 1// bits of buffering = 1. 
+    $if (rxBufferPointer == 0 ) $then 
+    sdhcRegisters[37 ] := (sdhcRegisters[37 ] & _hf7 ) $buffering 1// bits of buffering = 8. 
+    $if (singleMultipleReadBlock == 1 ) $then 
+    readBlockCountEnable := ((  $bitreduce |  (sdhcRegisters[12] & _h02 ) ) & singleMultipleBlock) $buffering 1// bits of buffering = 1. 
+    readBlockCount := (sdhcRegisters[7 ] && sdhcRegisters[6]) $buffering 1// bits of buffering = 16. 
+    readBlockCountTrue := (readBlockCount == 1 ) $buffering 1// bits of buffering = 1. 
+    readLastBlock := (readBlockCountEnable & readBlockCountTrue) $buffering 1// bits of buffering = 1. 
+    $if (readBlockCount != 0 ) $then 
+    newReadBlockCount := (readBlockCount - 1 ) $buffering 1// bits of buffering = 16. 
+    $call dataRx (readLastBlock ) (dataErrorInterruptStatusVar ) 
+    dataRxEnrty1 := ZERO_1 $buffering 1// bits of buffering = 1. 
+    dataRxEnrty2 := ONE_1 $buffering 1// bits of buffering = 1. 
+    sdhcRegisters[7 ] := ( $slice newReadBlockCount 15 8 )  $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[6] := ( $slice newReadBlockCount 7 0 )  $buffering 1// bits of buffering = 8. 
+    readDataTransferComplete := ( $mux readLastBlock ($bitcast ($uint<8>) 2  )  ZERO_8 )  $buffering 1// bits of buffering = 8. 
+    normalInterruptFlag1 := (normalInterruptFlag1 | _h02 ) $buffering 1// bits of buffering = 8. 
+    errorInterruptFlag1 := (errorInterruptFlag1 | _h60 ) $buffering 1// bits of buffering = 8. 
+    $endif
+    $endif
+    $endif
+    $endif
+    readdata3 := ( $mux b3 sdhcRegisters[(address + 0 )]  ZERO_8 )  $buffering 1// bits of buffering = 8. 
+    readdata2 := ( $mux b2 sdhcRegisters[(address + 1 )]  ZERO_8 )  $buffering 1// bits of buffering = 8. 
+    readdata1 := ( $mux b1 sdhcRegisters[(address + 2 )]  ZERO_8 )  $buffering 1// bits of buffering = 8. 
+    readdata0 := ( $mux b0 sdhcRegisters[(address + 3 )]  ZERO_8 )  $buffering 1// bits of buffering = 8. 
+    sdhc_to_peripheral_bridge_response := ((readdata3 && readdata2) && (readdata1 && readdata0)) $buffering 1// bits of buffering = 32. 
+    $endif
+    dataErrorInterruptStatus := ((( $mux dataRxEnrty1 dataErrorInterruptStatusVar1  _b0  )  | ( $mux dataRxEnrty2 dataErrorInterruptStatusVar  _b0  ) ) | ( $mux (( ~ dataRxEnrty1 ) & ( ~ dataRxEnrty2 )) ZERO_8  _b0  ) ) $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[50] := (((sdhcRegisters[50] | (dataErrorInterruptStatus | errorInterruptStatusVar1)) & errorInterruptFlag1) & sdhcRegisters[54]) $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[51 ] := (((sdhcRegisters[51 ] | errorInterruptStatusVar2) & errorInterruptFlag2) & sdhcRegisters[55 ]) $buffering 1// bits of buffering = 8. 
+    errorInterruptBit := (((  $bitreduce |  sdhcRegisters[50] ) | (  $bitreduce |  sdhcRegisters[51 ] )) && ($bitcast ($uint<7>) 0  )) $buffering 1// bits of buffering = 8. 
+    $volatile checkInterruptEnable := ((  $bitreduce |  sdhcRegisters[52] ) | (  $bitreduce |  sdhcRegisters[53 ] )) $buffering 1
+    $if (checkInterruptEnable == 1 ) $then 
+    interrupt := (((((readDataTransferComplete | dataTransferComplete) | transferComplete) | ((bufferReadReady | bufferWriteReady) | normalInterruptStatusVar1)) & sdhcRegisters[52]) & normalInterruptFlag1) $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[48] := interrupt $buffering 1// bits of buffering = 8. 
+    sdhcRegisters[49 ] := errorInterruptBit $buffering 1// bits of buffering = 8. 
+    interruptLine := (sdhcRegisters[56] & interrupt) $buffering 1// bits of buffering = 8. 
+    errorInterruptLine := ((sdhcRegisters[50] & sdhcRegisters[58]) | (sdhcRegisters[51 ] & sdhcRegisters[59 ])) $buffering 1// bits of buffering = 8. 
+    SDHC_to_IRC_INT := ((  $bitreduce |  interruptLine ) | (  $bitreduce |  errorInterruptLine )) $buffering 1// bits of buffering = 1. 
+    $else 
+    sdhcRegisters[48] := ZERO_8 $buffering 1// bits of buffering = 8. 
+    SDHC_to_IRC_INT := ZERO_1 $buffering 1// bits of buffering = 1. 
+    $endif
+    $report (int check 		 dataErrorInterruptStatus dataErrorInterruptStatus 		 errorInterruptStatusVar1 errorInterruptStatusVar1 		 errorInterruptFlag1 errorInterruptFlag1 )
+    $place[loopback]
+  }
+}
+// Memory space 0: sdhcRegisters 
+// Memory space 1: normalInterruptFlag1 
+// Memory space 2: normalInterruptFlag2 
+// Memory space 3: errorInterruptFlag1 
+// Memory space 4: errorInterruptFlag2 
+// Memory space 5: txBufferPointer 
+// Memory space 6: rxBufferPointer 
+// Memory space 7: dataRxEnrty 
+// Memory space 8: dataRxEnrty1 
+// Memory space 9: dataRxEnrty2 
+// Memory space 10: dataErrorInterruptStatus 
