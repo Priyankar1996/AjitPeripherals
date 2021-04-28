@@ -562,9 +562,9 @@ PTHREAD_CREATE(sdcard);
 
 err = ExecuteInitializationSequence();
 if (err)
-        fprintf(stderr, "Error in Initialization");
+        fprintf(stderr, "Error in Initialization\n");
 else
-        fprintf(stderr, "Succesfully Initialized");
+        fprintf(stderr, "Succesfully Initialized\n");
 //Initializing the write array by incrementing
 //every 32 bit of the block by 1.
 for(i = 0; i< FixedBlockSize ;i++)

@@ -19,17 +19,19 @@ $module [command_generator] $in() $out(normalInterruptStatusVar1:$uint<8> normal
 	//Sending the commands to the Command transmission pipe
 	$branchblock[send_command]
 	{
-		$merge $entry commandloopback
-			$phi J:= ZERO_8 $on $entry next_J $on commandloopback
-			$phi old_commandbits:= commandbits $on $entry new_commandbits $on commandloopback
-			$endmerge
+		$dopipeline $depth 10 $fullrate
+		$merge $entry $loopback
+			$phi J:= ZERO_8 $on $entry next_J $on $loopback
+			$phi old_commandbits:= commandbits $on $entry new_commandbits $on $loopback
+		$endmerge
 			$volatile next_J:= (J + 1)
-			bit:= ($slice old_commandbits 47 47)
+			$volatile bit:= ($slice old_commandbits 47 47)
 			commandTx:= bit
-			new_commandbits:= (old_commandbits << 1) 
-		$if(next_J < 48) $then
-			$place[commandloopback]
-		$endif
+			$volatile new_commandbits:= (old_commandbits << 1) 
+		//$if(next_J < 48) $then
+		//	$place[commandloopback]
+		//$endif
+		$while(next_J < 48)
 	}
 	
 	//Recieving response from the SD card
@@ -53,25 +55,27 @@ $module [command_generator] $in() $out(normalInterruptStatusVar1:$uint<8> normal
 	$if ((response_type == 2) | (response_type == 3)) $then //response_type 3 R1b need to check for busy
 		$branchblock[receive_response]
 		{
-		$merge $entry responseloopback
-			$phi J:= ($bitcast ($uint<6>) 0) $on $entry next_J $on responseloopback
-			$phi old_responsebits:= ($bitcast ($uint<48>) 0) $on $entry new_responsebits $on responseloopback
+		$dopipeline $depth 10 $fullrate
+		$merge $entry $loopback
+			$phi J:= ($bitcast ($uint<6>) 0) $on $entry next_J $on $loopback
+			$phi old_responsebits:= ($bitcast ($uint<48>) 0) $on $entry new_responsebits $on $loopback
 		$endmerge
 			$volatile next_J:= (J + 1)
 			responsebit:= responseRx
-			responsebits:= ($concat ($bitcast ($uint<47>) 0) responsebit)
+			responsebits:= ($concat ($bitcast ($uint<47>) 0) (responsebit [] 0))
 			new_responsebits:= ((old_responsebits<<1) | responsebits)
 			//$rreport(dumm dum responsebit responsebits new_responsebits old_responsebits)
-		$if(next_J < 48) $then
-			$place[responseloopback]
-		$endif
+		//$if(next_J < 48) $then
+		//	$place[responseloopback]
+		//$endif
+		$while(next_J <48)
 		}(new_responsebits=>response)
 		$rreport(gen_comm f response)
 
 		$if(response_type == 3)$then
 			$merge $entry waitloop $endmerge
 				wait:= DAT0Rx
-			$if(wait == ZERO_1)$then
+			$if(wait == ZERO_8)$then
 				$place[waitloop]
 			$endif
 		$endif
@@ -115,19 +119,21 @@ $module [command_generator] $in() $out(normalInterruptStatusVar1:$uint<8> normal
 		//$rreport(Here h response_type)
 		$branchblock[receive_bigresponse]
 		{
-		$merge $entry bigresponseloopback
-			$phi J:= ($bitcast ($uint<8>) 0) $on $entry next_J $on bigresponseloopback
-			$phi old_bigresponsebits:= ($bitcast ($uint<136>) 0) $on $entry new_bigresponsebits $on bigresponseloopback
+		$dopipeline $depth 10 $fullrate
+		$merge $entry $loopback
+			$phi J:= ($bitcast ($uint<8>) 0) $on $entry next_J $on $loopback
+			$phi old_bigresponsebits:= ($bitcast ($uint<136>) 0) $on $entry new_bigresponsebits $on $loopback
 		$endmerge
 			//$rreport(receive_bigresponse r response_type)
 			$volatile next_J:= (J + 1)
 			bigresponsebit:= responseRx
-			bigresponsebits:= ($concat ($bitcast ($uint<135>) 0) bigresponsebit)
+			bigresponsebits:= ($concat ($bitcast ($uint<135>) 0) (bigresponsebit [] 0))
 			new_bigresponsebits:= ((old_bigresponsebits<<1) | bigresponsebits)
 			//$rreport(dumm dum bigresponsebit bigresponsebits new_bigresponsebits old_bigresponsebits)
-		$if(next_J < 136) $then
-			$place[bigresponseloopback]
-		$endif
+		//$if(next_J < 136) $then
+		//	$place[bigresponseloopback]
+		//$endif
+		$while(next_J < 136)
 		}(new_bigresponsebits=>bigResponse)
 		$rreport(gen_comm f bigResponse)
 
@@ -145,15 +151,15 @@ $module [command_generator] $in() $out(normalInterruptStatusVar1:$uint<8> normal
 
 		$call bigResponseWrite (CID) ()
 
-		$volatile presentState3:= ((sdhcRegisters[PresentState]>>1) << 1)
-		$volatile normalInterrupt3:= sdhcRegisters[NormalInterruptStatus]
+		presentState3:= ((sdhcRegisters[PresentState]>>1) << 1)
+		normalInterrupt3:= sdhcRegisters[NormalInterruptStatus]
 		sdhcRegisters[PresentState]:= presentState3 //Clearing commandInhibit(CMD)
 		normalInterruptStatusVar_3:= (normalInterrupt3| _h01)//command Interrupt
 		$place[normalInterruptResponse3] 
 		
 		$else $if(response_type == 0) $then //No response type
-				$volatile presentState1:= ((sdhcRegisters[PresentState]>>1) << 1)
-				$volatile normalInterrupt1:= sdhcRegisters[NormalInterruptStatus]
+				presentState1:= ((sdhcRegisters[PresentState]>>1) << 1)
+				normalInterrupt1:= sdhcRegisters[NormalInterruptStatus]
 				sdhcRegisters[PresentState]:= presentState1 //Clearing commandInhibit(CMD)
 				normalInterruptStatusVar_1:= (normalInterrupt1| _h01)
 				errorInterruptStatusVar_1 := ZERO_8
@@ -183,7 +189,7 @@ $module [command_generator] $in() $out(normalInterruptStatusVar1:$uint<8> normal
 			transferCompleteData:= ($mux singleMultipleReadBlock ($bitcast ($uint<8>)2) ZERO_8)
 			$if(singleMultipleReadBlock ==1)$then
 				readBlockCount:= (sdhcRegisters[{BlockCount +1}] && sdhcRegisters[BlockCount])
-				newReadBlockCount:= (readBlockCount -1)
+				$volatile newReadBlockCount:= (readBlockCount -1)
 				sdhcRegisters[{BlockCount + 1}]:= ($slice newReadBlockCount 15 8)
 				sdhcRegisters[BlockCount]:= ($slice newReadBlockCount 7 0)
 			$endif
@@ -199,17 +205,19 @@ $module [bigResponseWrite] $in(CID:$uint<120>) $out() $is
 {
 	$branchblock[big_resp]
 	{
-		$merge $entry loopback
-			$phi k := ($bitcast ($uint<8>) 0) $on $entry next_k $on loopback
-			$phi temp := CID $on $entry next_temp $on loopback 
+		$dopipeline $depth 10 $fullrate
+		$merge $entry $loopback
+			$phi k := ($bitcast ($uint<8>) 0) $on $entry next_k $on $loopback
+			$phi temp := CID $on $entry next_temp $on $loopback 
 		$endmerge
 			address:= (16 + k)//Response0 + k
 			sdhcRegisters[address]:= ($slice temp 7 0)
 			next_temp:= (temp >> 8)
 			$volatile next_k:= ( k + 1)
 			//$volatile next_temp:= (temp + 8)
-		$if(next_k < 15) $then
-			$place[loopback]
-		$endif
+		//$if(next_k < 15) $then
+		//	$place[loopback]
+		//$endif
+		$while(next_k < 15)
 	}
 }

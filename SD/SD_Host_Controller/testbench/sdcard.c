@@ -456,7 +456,7 @@ void sdcard()
                 for(i=0;i<48;i++)
                 {
                         temp =(response & 0x800000000000);
-                        responsebit = (temp >> 47) & 0x1;
+                        responsebit = (temp >> 47) & 0x1; 
                         write_uint8("responseRx",responsebit);
                         fprintf(stderr,"%x",responsebit);
                         response = response << 1U;

@@ -74,9 +74,9 @@ $module [sdhc_daemon] $in() $out() $is
 			$endif			
 			//When the most significant byte of the Command Register is written 
 			//Command should be sent 
-			$volatile commandInhibit_CMD:= ((sdhcRegisters[PresentState] & _h01) == 0)
+			commandInhibit_CMD:= ((sdhcRegisters[PresentState] & _h01) == 0)
 			$volatile addresscheck := (((address + 3) == _h0f) & b0)
-			$volatile presentState:= ((sdhcRegisters[PresentState]>>1) << 1)
+			presentState:= ((sdhcRegisters[PresentState]>>1) << 1)
 			$if(addresscheck & commandInhibit_CMD) $then
 				sdhcRegisters[PresentState]:= (presentState | _h01) // Writing 1 to commandInhibit(CMD)
 				dataRxEnrty1:= ZERO_1
@@ -179,7 +179,7 @@ $module [sdhc_daemon] $in() $out() $is
 			sdhcRegisters[ErrorInterruptStatus]:= (((sdhcRegisters[ErrorInterruptStatus] |  ($reduce | dataErrorInterruptStatus errorInterruptStatusVar1 )) & errorInterruptFlag1) & sdhcRegisters[ErrorInterruptStatusEnable])
 			sdhcRegisters[{ErrorInterruptStatus +1}]:= (((sdhcRegisters[{ErrorInterruptStatus + 1}] | errorInterruptStatusVar2) & errorInterruptFlag2) & sdhcRegisters[{ErrorInterruptStatusEnable + 1}])
 			errorInterruptBit :=((($bitreduce | sdhcRegisters[ErrorInterruptStatus]) | ($bitreduce | sdhcRegisters[{ErrorInterruptStatus + 1}]) ) && ($bitcast ($uint<7>)0))
-			$volatile checkInterruptEnable :=(($bitreduce | sdhcRegisters[NormalInterruptStatusEnable]) | ($bitreduce | sdhcRegisters[{NormalInterruptStatusEnable + 1}]) )
+			checkInterruptEnable :=(($bitreduce | sdhcRegisters[NormalInterruptStatusEnable]) | ($bitreduce | sdhcRegisters[{NormalInterruptStatusEnable + 1}]) )
 			$if(checkInterruptEnable == 1) $then
 				interrupt:= ($reduce & ($reduce | readDataTransferComplete dataTransferComplete transferComplete bufferReadReady bufferWriteReady normalInterruptStatusVar1) sdhcRegisters[NormalInterruptStatusEnable] normalInterruptFlag1)
 				sdhcRegisters[NormalInterruptStatus]:= interrupt

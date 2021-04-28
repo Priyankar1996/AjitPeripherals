@@ -75,29 +75,29 @@ $pipe dataBufferRx :$uint<8> $depth 512
 
 
 //Pipe for sending Command 
-$pipe commandTx :$uint<1> $depth 1
+$pipe commandTx :$uint<1> $depth 4
 //Pipe for recieving response 
-$pipe responseRx :$uint<1> $depth 1
+$pipe responseRx :$uint<8> $depth 4
 
 //A dummy pipe----will not be used
 $pipe dummy :$uint<1> $depth 1
 
 //Pipe for sending Data
-$pipe DAT0Tx :$uint<1> $depth 1
+$pipe DAT0Tx :$uint<1> $depth 1024
 //Pipe for recieving Data 
-$pipe DAT0Rx :$uint<1> $depth 1
+$pipe DAT0Rx :$uint<8> $depth 1024
 //Pipe for sending Data
-$pipe DAT1Tx :$uint<1> $depth 1
+$pipe DAT1Tx :$uint<1> $depth 1024
 //Pipe for recieving Data 
-$pipe DAT1Rx :$uint<1> $depth 1
+$pipe DAT1Rx :$uint<8> $depth 1024
 //Pipe for sending Data
-$pipe DAT2Tx :$uint<1> $depth 1
+$pipe DAT2Tx :$uint<1> $depth 1024
 //Pipe for recieving Data 
-$pipe DAT2Rx :$uint<1> $depth 1
+$pipe DAT2Rx :$uint<8> $depth 1024
 //Pipe for sending Data
-$pipe DAT3Tx :$uint<1> $depth 1
+$pipe DAT3Tx :$uint<1> $depth 1024
 //Pipe for recieving Data 
-$pipe DAT3Rx :$uint<1> $depth 1
+$pipe DAT3Rx :$uint<8> $depth 1024
 
 //Interrupt signal
 $pipe SDHC_to_IRC_INT:$uint<1> $out $signal

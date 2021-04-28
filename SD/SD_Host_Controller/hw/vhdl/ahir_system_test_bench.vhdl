@@ -28,25 +28,25 @@ architecture VhpiLink of ahir_system_Test_Bench is --
     port (-- 
       clk : in std_logic;
       reset : in std_logic;
-      DAT0Rx_pipe_write_data: in std_logic_vector(0 downto 0);
+      DAT0Rx_pipe_write_data: in std_logic_vector(7 downto 0);
       DAT0Rx_pipe_write_req : in std_logic_vector(0 downto 0);
       DAT0Rx_pipe_write_ack : out std_logic_vector(0 downto 0);
       DAT0Tx_pipe_read_data: out std_logic_vector(0 downto 0);
       DAT0Tx_pipe_read_req : in std_logic_vector(0 downto 0);
       DAT0Tx_pipe_read_ack : out std_logic_vector(0 downto 0);
-      DAT1Rx_pipe_write_data: in std_logic_vector(0 downto 0);
+      DAT1Rx_pipe_write_data: in std_logic_vector(7 downto 0);
       DAT1Rx_pipe_write_req : in std_logic_vector(0 downto 0);
       DAT1Rx_pipe_write_ack : out std_logic_vector(0 downto 0);
       DAT1Tx_pipe_read_data: out std_logic_vector(0 downto 0);
       DAT1Tx_pipe_read_req : in std_logic_vector(0 downto 0);
       DAT1Tx_pipe_read_ack : out std_logic_vector(0 downto 0);
-      DAT2Rx_pipe_write_data: in std_logic_vector(0 downto 0);
+      DAT2Rx_pipe_write_data: in std_logic_vector(7 downto 0);
       DAT2Rx_pipe_write_req : in std_logic_vector(0 downto 0);
       DAT2Rx_pipe_write_ack : out std_logic_vector(0 downto 0);
       DAT2Tx_pipe_read_data: out std_logic_vector(0 downto 0);
       DAT2Tx_pipe_read_req : in std_logic_vector(0 downto 0);
       DAT2Tx_pipe_read_ack : out std_logic_vector(0 downto 0);
-      DAT3Rx_pipe_write_data: in std_logic_vector(0 downto 0);
+      DAT3Rx_pipe_write_data: in std_logic_vector(7 downto 0);
       DAT3Rx_pipe_write_req : in std_logic_vector(0 downto 0);
       DAT3Rx_pipe_write_ack : out std_logic_vector(0 downto 0);
       DAT3Tx_pipe_read_data: out std_logic_vector(0 downto 0);
@@ -59,7 +59,7 @@ architecture VhpiLink of ahir_system_Test_Bench is --
       peripheral_bridge_to_sdhc_request_pipe_write_data: in std_logic_vector(63 downto 0);
       peripheral_bridge_to_sdhc_request_pipe_write_req : in std_logic_vector(0 downto 0);
       peripheral_bridge_to_sdhc_request_pipe_write_ack : out std_logic_vector(0 downto 0);
-      responseRx_pipe_write_data: in std_logic_vector(0 downto 0);
+      responseRx_pipe_write_data: in std_logic_vector(7 downto 0);
       responseRx_pipe_write_req : in std_logic_vector(0 downto 0);
       responseRx_pipe_write_ack : out std_logic_vector(0 downto 0);
       sdhc_to_peripheral_bridge_response_pipe_read_data: out std_logic_vector(31 downto 0);
@@ -76,7 +76,7 @@ architecture VhpiLink of ahir_system_Test_Bench is --
   signal sdhc_daemon_fin_req   : std_logic := '0';
   signal sdhc_daemon_fin_ack   : std_logic := '0';
   -- write to pipe DAT0Rx
-  signal DAT0Rx_pipe_write_data: std_logic_vector(0 downto 0);
+  signal DAT0Rx_pipe_write_data: std_logic_vector(7 downto 0);
   signal DAT0Rx_pipe_write_req : std_logic_vector(0 downto 0) := (others => '0');
   signal DAT0Rx_pipe_write_ack : std_logic_vector(0 downto 0);
   -- read from pipe DAT0Tx
@@ -84,7 +84,7 @@ architecture VhpiLink of ahir_system_Test_Bench is --
   signal DAT0Tx_pipe_read_req : std_logic_vector(0 downto 0) := (others => '0');
   signal DAT0Tx_pipe_read_ack : std_logic_vector(0 downto 0);
   -- write to pipe DAT1Rx
-  signal DAT1Rx_pipe_write_data: std_logic_vector(0 downto 0);
+  signal DAT1Rx_pipe_write_data: std_logic_vector(7 downto 0);
   signal DAT1Rx_pipe_write_req : std_logic_vector(0 downto 0) := (others => '0');
   signal DAT1Rx_pipe_write_ack : std_logic_vector(0 downto 0);
   -- read from pipe DAT1Tx
@@ -92,7 +92,7 @@ architecture VhpiLink of ahir_system_Test_Bench is --
   signal DAT1Tx_pipe_read_req : std_logic_vector(0 downto 0) := (others => '0');
   signal DAT1Tx_pipe_read_ack : std_logic_vector(0 downto 0);
   -- write to pipe DAT2Rx
-  signal DAT2Rx_pipe_write_data: std_logic_vector(0 downto 0);
+  signal DAT2Rx_pipe_write_data: std_logic_vector(7 downto 0);
   signal DAT2Rx_pipe_write_req : std_logic_vector(0 downto 0) := (others => '0');
   signal DAT2Rx_pipe_write_ack : std_logic_vector(0 downto 0);
   -- read from pipe DAT2Tx
@@ -100,7 +100,7 @@ architecture VhpiLink of ahir_system_Test_Bench is --
   signal DAT2Tx_pipe_read_req : std_logic_vector(0 downto 0) := (others => '0');
   signal DAT2Tx_pipe_read_ack : std_logic_vector(0 downto 0);
   -- write to pipe DAT3Rx
-  signal DAT3Rx_pipe_write_data: std_logic_vector(0 downto 0);
+  signal DAT3Rx_pipe_write_data: std_logic_vector(7 downto 0);
   signal DAT3Rx_pipe_write_req : std_logic_vector(0 downto 0) := (others => '0');
   signal DAT3Rx_pipe_write_ack : std_logic_vector(0 downto 0);
   -- read from pipe DAT3Tx
@@ -121,7 +121,7 @@ architecture VhpiLink of ahir_system_Test_Bench is --
   signal peripheral_bridge_to_sdhc_request_pipe_write_req : std_logic_vector(0 downto 0) := (others => '0');
   signal peripheral_bridge_to_sdhc_request_pipe_write_ack : std_logic_vector(0 downto 0);
   -- write to pipe responseRx
-  signal responseRx_pipe_write_data: std_logic_vector(0 downto 0);
+  signal responseRx_pipe_write_data: std_logic_vector(7 downto 0);
   signal responseRx_pipe_write_req : std_logic_vector(0 downto 0) := (others => '0');
   signal responseRx_pipe_write_ack : std_logic_vector(0 downto 0);
   -- read from pipe sdhc_to_peripheral_bridge_response
@@ -167,8 +167,8 @@ begin --
       Vhpi_Get_Port_Value(obj_ref,req_val_string,1);
       DAT0Rx_pipe_write_req <= Unpack_String(req_val_string,1);
       obj_ref := Pack_String_To_Vhpi_String("DAT0Rx 0");
-      Vhpi_Get_Port_Value(obj_ref,port_val_string,1);
-      DAT0Rx_pipe_write_data <= Unpack_String(port_val_string,1);
+      Vhpi_Get_Port_Value(obj_ref,port_val_string,8);
+      DAT0Rx_pipe_write_data <= Unpack_String(port_val_string,8);
       wait until clk = '1';
       obj_ref := Pack_String_To_Vhpi_String("DAT0Rx ack");
       ack_val_string := Pack_SLV_To_Vhpi_String(DAT0Rx_pipe_write_ack);
@@ -219,8 +219,8 @@ begin --
       Vhpi_Get_Port_Value(obj_ref,req_val_string,1);
       DAT1Rx_pipe_write_req <= Unpack_String(req_val_string,1);
       obj_ref := Pack_String_To_Vhpi_String("DAT1Rx 0");
-      Vhpi_Get_Port_Value(obj_ref,port_val_string,1);
-      DAT1Rx_pipe_write_data <= Unpack_String(port_val_string,1);
+      Vhpi_Get_Port_Value(obj_ref,port_val_string,8);
+      DAT1Rx_pipe_write_data <= Unpack_String(port_val_string,8);
       wait until clk = '1';
       obj_ref := Pack_String_To_Vhpi_String("DAT1Rx ack");
       ack_val_string := Pack_SLV_To_Vhpi_String(DAT1Rx_pipe_write_ack);
@@ -271,8 +271,8 @@ begin --
       Vhpi_Get_Port_Value(obj_ref,req_val_string,1);
       DAT2Rx_pipe_write_req <= Unpack_String(req_val_string,1);
       obj_ref := Pack_String_To_Vhpi_String("DAT2Rx 0");
-      Vhpi_Get_Port_Value(obj_ref,port_val_string,1);
-      DAT2Rx_pipe_write_data <= Unpack_String(port_val_string,1);
+      Vhpi_Get_Port_Value(obj_ref,port_val_string,8);
+      DAT2Rx_pipe_write_data <= Unpack_String(port_val_string,8);
       wait until clk = '1';
       obj_ref := Pack_String_To_Vhpi_String("DAT2Rx ack");
       ack_val_string := Pack_SLV_To_Vhpi_String(DAT2Rx_pipe_write_ack);
@@ -323,8 +323,8 @@ begin --
       Vhpi_Get_Port_Value(obj_ref,req_val_string,1);
       DAT3Rx_pipe_write_req <= Unpack_String(req_val_string,1);
       obj_ref := Pack_String_To_Vhpi_String("DAT3Rx 0");
-      Vhpi_Get_Port_Value(obj_ref,port_val_string,1);
-      DAT3Rx_pipe_write_data <= Unpack_String(port_val_string,1);
+      Vhpi_Get_Port_Value(obj_ref,port_val_string,8);
+      DAT3Rx_pipe_write_data <= Unpack_String(port_val_string,8);
       wait until clk = '1';
       obj_ref := Pack_String_To_Vhpi_String("DAT3Rx ack");
       ack_val_string := Pack_SLV_To_Vhpi_String(DAT3Rx_pipe_write_ack);
@@ -472,8 +472,8 @@ begin --
       Vhpi_Get_Port_Value(obj_ref,req_val_string,1);
       responseRx_pipe_write_req <= Unpack_String(req_val_string,1);
       obj_ref := Pack_String_To_Vhpi_String("responseRx 0");
-      Vhpi_Get_Port_Value(obj_ref,port_val_string,1);
-      responseRx_pipe_write_data <= Unpack_String(port_val_string,1);
+      Vhpi_Get_Port_Value(obj_ref,port_val_string,8);
+      responseRx_pipe_write_data <= Unpack_String(port_val_string,8);
       wait until clk = '1';
       obj_ref := Pack_String_To_Vhpi_String("responseRx ack");
       ack_val_string := Pack_SLV_To_Vhpi_String(responseRx_pipe_write_ack);
